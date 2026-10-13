@@ -1,4 +1,4 @@
-"""Metadata builder — generate metadata.json for converted documents."""
+# I write the metadata.json sidecar that describes a converted document.
 
 from __future__ import annotations
 
@@ -18,22 +18,7 @@ def build_metadata(
     classifications: list[PageClassificationResult] | None = None,
     quality: QualityReport | None = None,
 ) -> dict:
-    """Build metadata dictionary for a converted document.
-
-    Args:
-        source: Original PDF filename.
-        pages_processed: Number of pages processed.
-        total_pages: Total pages in the PDF.
-        pages_with_ocr: Pages that used OCR.
-        avg_confidence: Average OCR confidence (0.0-1.0).
-        elapsed_seconds: Processing time.
-        warnings: Optional list of warning messages.
-        classifications: Optional list of page classification results.
-        quality: Optional quality report from text analysis.
-
-    Returns:
-        Dictionary suitable for JSON serialization.
-    """
+    # Everything goes in one dict, with the optional sections only when they exist.
     metadata = {
         "source": source,
         "total_pages": total_pages,
@@ -46,12 +31,12 @@ def build_metadata(
         "warnings": warnings or [],
     }
 
-    # Add classification data if provided
+    # Classification counts are optional, so this block may be absent.
     if classifications:
         metadata["classification_summary"] = _build_classification_summary(classifications)
         metadata["page_classifications"] = [_build_page_classification(c) for c in classifications]
 
-    # Add quality metrics if provided
+    # Same for the quality metrics.
     if quality is not None:
         metadata["quality"] = quality.to_dict()
         metadata["quality"]["score"] = quality_score(quality)
@@ -62,14 +47,7 @@ def build_metadata(
 def _build_classification_summary(
     classifications: list[PageClassificationResult],
 ) -> dict:
-    """Build summary of classification results.
-
-    Args:
-        classifications: List of page classification results.
-
-    Returns:
-        Summary dictionary with counts per type.
-    """
+    # I count how many pages fell into each bucket.
     counts: dict[str, int] = {}
     blank_count = 0
     needs_review_count = 0
@@ -94,14 +72,7 @@ def _build_classification_summary(
 def _build_page_classification(
     result: PageClassificationResult,
 ) -> dict:
-    """Build single page classification entry.
-
-    Args:
-        result: Page classification result.
-
-    Returns:
-        Dictionary with page classification data.
-    """
+    # One page's entry in the classification detail list.
     entry = {
         "page": result.page_number,
         "classification": result.classification.value,

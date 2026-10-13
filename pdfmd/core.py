@@ -1,4 +1,4 @@
-"""Core pipeline — orchestrates PDF-to-Markdown conversion."""
+# The pipeline itself: open, render, OCR, assemble, write.
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ from pdfmd.types import OCRParameters, PageClassificationResult
 
 @dataclass
 class PageResult:
-    """Result of processing a single page."""
+    # What came out of one page, whether it was OCR'd or read from a text layer.
 
     page_number: int
     text: str
@@ -41,7 +41,7 @@ class PageResult:
 
 @dataclass
 class ConversionResult:
-    """Result of a full PDF conversion."""
+    # The whole run, from the first page to the files on disk.
 
     pages_processed: int
     total_pages: int
@@ -68,30 +68,14 @@ def convert_pdf(
     min_confidence: float = 0.70,
     retry_threshold: float = 0.50,
 ) -> ConversionResult:
-    """Convert a scanned PDF to Markdown via OCR.
-
-    Args:
-        input_path: Path to the source PDF.
-        output_path: Path for the output Markdown file.
-        tesseract_path: Optional path to Tesseract binary.
-        lang: Tesseract language code (default: spa).
-        dpi: Render resolution (default: 300).
-        pages: Optional list of 0-based page indices to process (default: all).
-        signers: Optional list of expected signer names for signature detection.
-        classify: Enable smart page classification and adaptive OCR (default: False).
-        min_confidence: Minimum confidence threshold (default: 70%). Pages below are flagged for review.
-        retry_threshold: Retry threshold (default: 50%). Pages below are retried with enhanced params.
-
-    Returns:
-        ConversionResult with stats about the conversion.
-    """
+    # The public entry point. Everything else in here is a step inside it.
     start_time = time.time()
     warnings: list[str] = []
 
-    # Initialize Tesseract
+    # Tesseract first, because if it's missing nothing else matters.
     initialize_tesseract(tesseract_path=tesseract_path, lang=lang)
 
-    # Initialize classification components if enabled
+    # Classifier and router are optional, so I only build them when asked.
     page_classifier: PageClassifier | None = None
     adaptive_router: AdaptiveOCRRouter | None = None
     image_preprocessor: ImagePreprocessor | None = None
@@ -103,21 +87,21 @@ def convert_pdf(
         image_preprocessor = ImagePreprocessor()
         warnings.append("Smart classification enabled — adaptive OCR active")
 
-    # Open PDF
+    # PyMuPDF hands back a document I can page through.
     doc = open_pdf(input_path)
     total_pages = get_page_count(doc)
 
-    # Determine which pages to process
+    # An empty page spec means the entire document.
     if pages is not None:
         page_indices = [p for p in pages if p < total_pages]
     else:
         page_indices = list(range(total_pages))
 
-    # Extract images from the PDF
+    # Embedded images, when the caller wants them alongside the text.
     all_images = extract_images(doc, pages=page_indices)
     unique_images = deduplicate(all_images)
 
-    # Save images if any were found
+    # Nothing to save is a normal case, not an error.
     images_dir = None
     if unique_images:
         out_dir = Path(output_path).parent / "images"
@@ -131,14 +115,14 @@ def convert_pdf(
         page = doc[i]
         page_num = i + 1
 
-        # Classification-based routing
+        # With classification on, each page picks its own DPI and PSM instead of one global setting.
         ocr_params = OCRParameters(dpi=dpi, psm=6, lang=lang)
         if page_classifier and adaptive_router:
             classification = page_classifier.classify_page(doc, i)
             ocr_params = adaptive_router.get_parameters_for_result(classification)
             classifications.append(classification)
 
-            # Skip blank pages
+            # Blank pages skip OCR entirely, which is where the big speedup comes from.
             if ocr_params.skip_ocr:
                 result = PageResult(
                     page_number=page_num,
@@ -150,7 +134,7 @@ def convert_pdf(
                 page_results.append(result)
                 continue
 
-        # Check for existing text layer
+        # A real text layer is cheaper and more accurate than OCR, so I use it when present.
         if has_text_layer(page):
             text = extract_page_text(page)
             blocks = analyze_page(text, confidence=1.0)
@@ -162,11 +146,11 @@ def convert_pdf(
                 blocks=blocks,
             )
         else:
-            # Render with classification-aware DPI
+            # Render at the DPI the classifier asked for, not the global default.
             render_dpi = ocr_params.dpi if classify else dpi
             img = render_page(page, dpi=render_dpi)
 
-            # Preprocess if classification enabled and the page needs it (US-2).
+            # I gate preprocessing on image quality. Good scans skip it; retries always run it.
             # The gate skips preprocessing on good-quality images; the retry
             # path below always preprocesses (targeted corrective action).
             if classify and image_preprocessor and ocr_params.preprocess:
@@ -179,11 +163,11 @@ def convert_pdf(
                     )
                     img = preprocessed.image
 
-            # OCR with classification-aware parameters (single pass — US-1)
+            # One Tesseract call per page, returning text and confidence together.
             psm = ocr_params.psm if classify else 6
             text, conf = ocr_with_confidence(img, lang=lang, config=f"--psm {psm}")
 
-            # Retry with enhanced params if confidence below retry_threshold
+            # Low confidence gets one more attempt at a higher DPI before I give up on the page.
             if classify and conf < retry_threshold and image_preprocessor:
                 retry_dpi = min(render_dpi + 100, 600)
                 img_retry = render_page(page, dpi=retry_dpi)
@@ -203,14 +187,14 @@ def convert_pdf(
                         f"confidence improved {conf_retry:.2f}"
                     )
 
-            # Flag for review if below min_confidence (US-6)
+            # Below the caller's floor I mark the page for review rather than hiding the problem.
             if conf < min_confidence:
                 warnings.append(
                     f"Page {page_num}: confidence {conf:.2f} below threshold "
                     f"{min_confidence:.2f} — flagged for review"
                 )
 
-            # Warn on low confidence
+            # Same signal, but only worth a warning when it's genuinely low.
             if conf < 0.5:
                 warnings.append(f"Low OCR confidence on page {page_num}: {conf:.2f}")
 
@@ -223,7 +207,7 @@ def convert_pdf(
                 blocks=blocks,
             )
 
-            # Detect signatures if signers provided
+            # Signer matching only costs anything if the caller said who to look for.
             if signers:
                 sig_regions = detect_signatures(img)
                 matched = []
@@ -246,7 +230,7 @@ def convert_pdf(
 
     doc.close()
 
-    # Build Markdown from structured blocks
+    # Blocks in, Markdown out, one section per page.
     markdown_sections: list[str] = []
     for pr in page_results:
         section = build_markdown(pr.blocks, page_number=pr.page_number)
@@ -255,15 +239,15 @@ def convert_pdf(
 
     markdown_content = "\n\n".join(markdown_sections)
 
-    # Compute quality metrics
+    # I score the finished text, not the OCR fragments, since that's what the reader gets.
     quality_report = measure_text_quality(markdown_content)
 
-    # Write Markdown
+    # Write the Markdown first; it's the artefact people actually want.
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     atomic_write(out, markdown_content)
 
-    # Build and write metadata
+    # Metadata is a sidecar that describes the run.
     ocr_pages = [p for p in page_results if p.used_ocr]
     confidences = [p.confidence for p in ocr_pages]
     avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
@@ -284,7 +268,7 @@ def convert_pdf(
     metadata_path = out.parent / "metadata.json"
     safe_write_json(metadata_path, metadata)
 
-    # Generate signature report if signers were provided
+    # Only meaningful when the caller passed signers in.
     signature_report_path = None
     if signers and page_signatures:
         report = generate_signature_report(page_signatures)
@@ -305,7 +289,7 @@ def convert_pdf(
 
         signature_report_path = str(sig_report_path)
 
-        # Add unmatched signer warnings
+        # A signer nobody matched is worth surfacing, not swallowing.
         for signer in report.unmatched_signers:
             warnings.append(f"Expected signer '{signer}' not found in any signature")
 
@@ -325,7 +309,7 @@ def convert_pdf(
 
 
 def _build_signature_report_md(report) -> str:
-    """Build a Markdown signature report."""
+    # I render the signature findings as a separate Markdown file.
     lines = [
         "# Signature Report",
         "",

@@ -1,4 +1,4 @@
-"""Image extractor — extract and deduplicate images from PDF pages."""
+# I pull embedded images out of the PDF and drop the duplicates.
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pymupdf import Document
 
 @dataclass
 class ExtractedImage:
-    """An image extracted from a PDF page."""
+    # One image, still in memory, with the page it came from.
 
     data: bytes
     page: int  # 1-based page number
@@ -27,7 +27,7 @@ class ExtractedImage:
 
 @dataclass
 class SavedImage:
-    """A saved image file."""
+    # Same image, now on disk with a real path.
 
     path: str
     page: int
@@ -36,15 +36,7 @@ class SavedImage:
 
 
 def extract_images(doc: Document, pages: list[int] | None = None) -> list[ExtractedImage]:
-    """Extract embedded images from PDF pages.
-
-    Args:
-        doc: PyMuPDF Document object.
-        pages: Optional list of 0-based page indices (default: all).
-
-    Returns:
-        List of ExtractedImage objects.
-    """
+    # I walk every page's image list and decode each one through PyMuPDF.
     images: list[ExtractedImage] = []
 
     if pages is None:
@@ -78,14 +70,7 @@ def extract_images(doc: Document, pages: list[int] | None = None) -> list[Extrac
 
 
 def deduplicate(images: list[ExtractedImage]) -> list[ExtractedImage]:
-    """Remove duplicate images based on content hash.
-
-    Args:
-        images: List of ExtractedImage objects.
-
-    Returns:
-        Deduplicated list keeping the first occurrence.
-    """
+    # The same logo on 200 pages is one file, so I compare content hashes.
     seen_hashes: set[str] = set()
     unique: list[ExtractedImage] = []
 
@@ -98,22 +83,14 @@ def deduplicate(images: list[ExtractedImage]) -> list[ExtractedImage]:
 
 
 def save_images(images: list[ExtractedImage], output_dir: str) -> list[SavedImage]:
-    """Save extracted images to disk.
-
-    Args:
-        images: List of ExtractedImage objects.
-        output_dir: Directory to save images to.
-
-    Returns:
-        List of SavedImage objects with file paths.
-    """
+    # I write the bytes and report what landed on disk.
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     saved: list[SavedImage] = []
 
     for img in images:
-        # Determine extension from image data
+        # The extension comes from the bytes themselves, not the extension PDF claims.
         ext = "png"
         if img.data[:3] == b"\xff\xd8\xff":
             ext = "jpg"

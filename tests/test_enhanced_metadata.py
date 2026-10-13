@@ -1,14 +1,11 @@
-"""Tests for enhanced metadata with classification support."""
 
 from pdfmd.metadata_builder import build_metadata
 from pdfmd.types import OCRParameters, PageClassification, PageClassificationResult
 
 
 class TestBuildMetadata:
-    """Test build_metadata function."""
 
     def test_basic_metadata(self):
-        """Basic metadata without classification."""
         metadata = build_metadata(
             source="test.pdf",
             pages_processed=10,
@@ -27,7 +24,6 @@ class TestBuildMetadata:
         assert "classification_summary" not in metadata
 
     def test_metadata_with_warnings(self):
-        """Metadata includes warnings."""
         warnings = ["Low confidence on page 5", "Page 10 blank"]
         metadata = build_metadata(
             source="test.pdf",
@@ -42,7 +38,6 @@ class TestBuildMetadata:
         assert metadata["warnings"] == warnings
 
     def test_metadata_with_classifications(self):
-        """Metadata includes classification data."""
         classifications = [
             PageClassificationResult(
                 page_number=1,
@@ -75,7 +70,6 @@ class TestBuildMetadata:
         assert len(metadata["page_classifications"]) == 2
 
     def test_classification_summary_counts(self):
-        """Classification summary has correct counts."""
         classifications = [
             PageClassificationResult(
                 page_number=1,
@@ -117,7 +111,6 @@ class TestBuildMetadata:
         assert summary["blank_pages"] == 1
 
     def test_page_classification_entry(self):
-        """Page classification entry has correct fields."""
         classifications = [
             PageClassificationResult(
                 page_number=1,
@@ -153,7 +146,6 @@ class TestBuildMetadata:
         assert page_entry["ocr_params"]["dpi"] == 400
 
     def test_low_confidence_flagged_for_review(self):
-        """Low confidence classifications are flagged for review."""
         classifications = [
             PageClassificationResult(
                 page_number=1,
@@ -178,7 +170,6 @@ class TestBuildMetadata:
         assert summary["needs_review"] == 1
 
     def test_metadata_json_serializable(self):
-        """Metadata is JSON serializable."""
         import json
 
         classifications = [

@@ -1,4 +1,3 @@
-"""Tests for security module (US-7, Feature 003)."""
 
 import tempfile
 from pathlib import Path
@@ -79,7 +78,6 @@ class TestCheckMemoryLimit:
 
 
 class TestCLISecurity:
-    """Tests for security integration in CLI."""
 
     def test_traversal_path_rejected(self):
         result = runner.invoke(app, ["convert", "../../../etc/passwd"])

@@ -1,11 +1,9 @@
-"""Tests for markdown_builder module."""
 
 from pdfmd.content_analyzer import Block
 from pdfmd.markdown_builder import build_markdown
 
 
 class TestBuildMarkdown:
-    """Tests for build_markdown()."""
 
     def test_heading_becomes_h2(self):
         blocks = [Block(type="heading", text="DEMANDA JUDICIAL", confidence=0.95)]

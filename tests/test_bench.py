@@ -1,4 +1,3 @@
-"""Tests for benchmark output format (US-8, Feature 003)."""
 
 import json
 import tempfile
@@ -11,7 +10,6 @@ SMALL_PDF = FIXTURE_DIR / "valid" / "simple_1page.pdf"
 
 
 class TestBenchOutput:
-    """Tests verifying bench.py JSON output structure."""
 
     def test_benchmark_runs(self):
         if not SMALL_PDF.exists():

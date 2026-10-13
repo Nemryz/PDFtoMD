@@ -1,4 +1,3 @@
-"""Tests for ocr_engine module."""
 
 from pathlib import Path
 
@@ -16,24 +15,19 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 def _normalize_ws(text: str) -> str:
-    """Collapse all whitespace for text comparison."""
     return " ".join(text.split())
 
 
 class TestInitializeTesseract:
-    """Tests for initialize_tesseract()."""
 
     def test_initializes_without_error(self):
-        """Tesseract should initialize with default settings."""
         # Should not raise
         initialize_tesseract()
 
 
 class TestOcrImage:
-    """Tests for ocr_image()."""
 
     def test_returns_string(self):
-        """ocr_image should return a string (may be empty for blank pages)."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         result = ocr_image(img)
@@ -41,7 +35,6 @@ class TestOcrImage:
         doc.close()
 
     def test_ocr_first_page_has_content(self):
-        """First page of scanned PDF should produce some OCR text."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         text = ocr_image(img)
@@ -51,10 +44,8 @@ class TestOcrImage:
 
 
 class TestGetConfidence:
-    """Tests for get_confidence()."""
 
     def test_returns_float_between_0_and_1(self):
-        """Confidence should be a float between 0.0 and 1.0."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         conf = get_confidence(img)
@@ -64,10 +55,8 @@ class TestGetConfidence:
 
 
 class TestOcrWithConfidence:
-    """Tests for ocr_with_confidence() — single-pass OCR (US-1, Feature 003)."""
 
     def test_returns_text_and_confidence_tuple(self):
-        """ocr_with_confidence should return a (str, float) tuple."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         result = ocr_with_confidence(img)
@@ -78,7 +67,6 @@ class TestOcrWithConfidence:
         doc.close()
 
     def test_text_matches_ocr_image(self):
-        """Single-pass text should match ocr_image() output (whitespace-normalized)."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         single_text, _ = ocr_with_confidence(img)
@@ -87,7 +75,6 @@ class TestOcrWithConfidence:
         doc.close()
 
     def test_confidence_matches_get_confidence(self):
-        """Single-pass confidence should match get_confidence() within 1%."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         _, single_conf = ocr_with_confidence(img)
@@ -96,7 +83,6 @@ class TestOcrWithConfidence:
         doc.close()
 
     def test_single_tesseract_call(self, monkeypatch):
-        """ocr_with_confidence must issue exactly ONE Tesseract call."""
         import pytesseract
 
         doc = open_pdf(str(REAL_PDF))
@@ -121,7 +107,6 @@ class TestOcrWithConfidence:
         assert len(calls) == 1
 
     def test_blank_image_returns_empty_and_zero(self):
-        """Blank image yields empty text and 0.0 confidence."""
         from PIL import Image
 
         img = Image.new("RGB", (200, 200), (255, 255, 255))
@@ -130,7 +115,6 @@ class TestOcrWithConfidence:
         assert conf == 0.0
 
     def test_first_page_has_content(self):
-        """Single-pass OCR of the first scanned page should extract text."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=300)
         text, conf = ocr_with_confidence(img)

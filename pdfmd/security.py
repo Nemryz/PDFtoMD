@@ -1,4 +1,4 @@
-"""Security module — input validation and resource limits."""
+# Input checks and resource limits, so a bad file can't take the process down.
 
 from __future__ import annotations
 
@@ -6,30 +6,23 @@ import os
 
 
 def validate_path(path: str) -> bool:
-    """Validate that a file path is safe (no traversal, no null bytes).
-
-    Args:
-        path: File path to validate.
-
-    Returns:
-        True if path is safe, False if it contains traversal or injection.
-    """
+    # I reject anything that tries to climb out of its directory or smuggle a null byte.
     if not path:
         return False
 
-    # Reject null bytes
+    # A null byte truncates the path in some C layers, so I never pass one through.
     if "\x00" in path:
         return False
 
-    # Normalize and check for traversal
+    # Normalising first collapses ../ and makes the check meaningful.
     normalized = os.path.normpath(path)
     parts = normalized.split(os.sep)
 
-    # Reject if any part is ".."
+    # Any '..' segment at all is refused.
     if ".." in parts:
         return False
 
-    # Reject if path contains ".." as a component (e.g. user/../etc)
+    # Same idea, phrased for the user/../etc shape rather than a bare '..'.
     if ".." in path.replace("\\", "/").split("/"):
         return False
 
@@ -37,30 +30,14 @@ def validate_path(path: str) -> bool:
 
 
 def check_page_limit(current: int, max_pages: int) -> bool:
-    """Check if we're still within the page processing limit.
-
-    Args:
-        current: Current page number being processed.
-        max_pages: Maximum pages allowed (0 = no limit).
-
-    Returns:
-        True if within limit, False if limit exceeded.
-    """
+    # I compare pages done against pages allowed, and zero means no limit.
     if max_pages <= 0:
         return True
     return current < max_pages
 
 
 def check_memory_limit(peak_mb: float, max_mb: float) -> bool:
-    """Check if memory usage is within the allowed limit.
-
-    Args:
-        peak_mb: Current peak memory usage in MB.
-        max_mb: Maximum memory allowed in MB (0 = no limit).
-
-    Returns:
-        True if within limit, False if limit exceeded.
-    """
+    # Same idea against a megabyte ceiling, zero meaning unlimited.
     if max_mb <= 0:
         return True
     return peak_mb < max_mb

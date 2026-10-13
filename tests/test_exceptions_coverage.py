@@ -1,4 +1,3 @@
-"""Coverage tests for exceptions module."""
 
 from pdfmd.exceptions import (
     OCRError,

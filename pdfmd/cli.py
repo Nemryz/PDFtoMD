@@ -1,4 +1,4 @@
-"""CLI module — Typer CLI with progress bars and Rich output."""
+# The Typer entry point, wired to Rich so progress and results read well in a terminal.
 
 from __future__ import annotations
 
@@ -57,13 +57,13 @@ def convert(
     ),
     version: bool = typer.Option(False, "--version", "-v", help="Show version"),
 ) -> None:
-    """Convert a scanned PDF to structured Markdown with OCR."""
+    # I turn a scanned PDF into Markdown, and I take care of every limit before I start.
 
     if version:
         console.print(f"pdfmd v{__version__}")
         raise typer.Exit()
 
-    # Validate input file
+    # I refuse to work on something that isn't a readable file.
     input_file = Path(input_path)
     if not validate_path(input_path):
         console.print(f"[red]Error:[/red] Invalid path (possible traversal): {input_path}")
@@ -76,29 +76,29 @@ def convert(
         console.print(f"[red]Error:[/red] Not a PDF file: {input_path}")
         raise typer.Exit(code=1)
 
-    # Determine output path
+    # If the caller didn't name an output, I derive one from the input name.
     if output:
         out_path = Path(output)
     else:
         out_path = input_file.with_suffix(".md")
 
-    # Parse pages
+    # The page spec is a range string like 1-20, so I parse it into a list first.
     page_indices = None
     if pages:
         page_indices = _parse_pages(pages)
 
-    # Enforce max-pages limit
+    # --max-pages is a hard stop, checked before I touch the document.
     if max_pages > 0 and page_indices is not None:
         page_indices = page_indices[:max_pages]
     elif max_pages > 0 and page_indices is None:
         page_indices = list(range(max_pages))
 
-    # Parse signers
+    # --signers lets the caller list who they expect to have signed.
     signer_list = None
     if signers:
         signer_list = [s.strip() for s in signers.split(",") if s.strip()]
 
-    # Run conversion with progress
+    # This is the slow part, so it gets a progress bar.
     try:
         with Progress(
             SpinnerColumn(),
@@ -133,15 +133,12 @@ def convert(
         console.print(f"[red]Error:[/red] Conversion failed: {e}")
         raise typer.Exit(code=1)
 
-    # Display results
+    # Then I show what came out of it.
     _display_results(result)
 
 
 def _parse_pages(pages_str: str) -> list[int]:
-    """Parse page specification string.
-
-    Supports: '0,1,2' or '0-5' or '0,2-4,7'
-    """
+    # I accept 5, 1-20, 1-5,10-12 and treat an empty string as everything.
     indices: list[int] = []
     for part in pages_str.split(","):
         part = part.strip()
@@ -154,7 +151,7 @@ def _parse_pages(pages_str: str) -> list[int]:
 
 
 def _display_results(result) -> None:
-    """Display conversion results with Rich formatting."""
+    # I print the summary panel, but only the fields the conversion actually filled in.
     console.print()
     console.print(
         Panel(
@@ -176,7 +173,7 @@ def _display_results(result) -> None:
     if result.images_dir:
         console.print(f"Images: {result.images_dir}")
 
-    # Display classification summary if available
+    # Classification counts are optional, so I only show them when they exist.
     if hasattr(result, "classifications") and result.classifications:
         from collections import Counter
 
@@ -199,7 +196,7 @@ def _display_results(result) -> None:
 def info(
     input_path: str = typer.Argument(..., help="Path to PDF file"),
 ) -> None:
-    """Show information about a PDF file without converting."""
+    # --info answers what's in a PDF without converting it.
     from pdfmd.pdf_reader import get_page_count, has_text_layer, open_pdf
 
     try:

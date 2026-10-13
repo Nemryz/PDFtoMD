@@ -1,8 +1,4 @@
-"""Adaptive OCR router that selects optimal parameters based on page classification.
-
-This module maps page classifications to OCR parameters, enabling different
-processing strategies for different page types.
-"""
+# I pick the OCR settings per page type, so a blank page and a handwritten one differ.
 
 from __future__ import annotations
 
@@ -16,7 +12,7 @@ from pdfmd.types import (
 
 logger = logging.getLogger(__name__)
 
-# Routing table: classification -> OCR parameters
+# This is how each page classification maps onto the parameters I hand to the OCR engine.
 ROUTING_TABLE: dict[PageClassification, OCRParameters] = {
     PageClassification.BLANK: OCRParameters(
         dpi=300,
@@ -82,27 +78,16 @@ ROUTING_TABLE: dict[PageClassification, OCRParameters] = {
 
 
 class AdaptiveOCRRouter:
-    """Selects OCR parameters based on page classification."""
+    # I turn a page classification into the parameters the engine will run with.
 
     def __init__(self, custom_routing: dict[PageClassification, OCRParameters] | None = None):
-        """Initialize router with optional custom routing table.
-
-        Args:
-            custom_routing: Custom routing table to override defaults.
-        """
+        # I take an optional override table, so callers can retune any page type they care about.
         self._routing = ROUTING_TABLE.copy()
         if custom_routing:
             self._routing.update(custom_routing)
 
     def get_parameters(self, classification: PageClassification) -> OCRParameters:
-        """Get OCR parameters for a given classification.
-
-        Args:
-            classification: Page classification.
-
-        Returns:
-            OCR parameters for this classification type.
-        """
+        # I look up whatever is registered for that classification, else fall back to UNKNOWN.
         params = self._routing.get(classification)
         if params is None:
             logger.warning(f"No routing for {classification}, using UNKNOWN defaults")
@@ -110,17 +95,10 @@ class AdaptiveOCRRouter:
         return params
 
     def get_parameters_for_result(self, result: PageClassificationResult) -> OCRParameters:
-        """Get OCR parameters for a classification result.
-
-        Args:
-            result: Page classification result.
-
-        Returns:
-            OCR parameters with needs_review set based on confidence.
-        """
+        # Same as above, except I also weigh how confident the classification came out.
         params = self.get_parameters(result.classification)
 
-        # Create a copy to avoid modifying the routing table
+        # I copy before returning, otherwise I'd be editing the shared table in place.
         params = OCRParameters(
             dpi=params.dpi,
             psm=params.psm,
@@ -132,7 +110,7 @@ class AdaptiveOCRRouter:
             needs_review=params.needs_review,
         )
 
-        # Flag low-confidence classifications for review
+        # Under half confidence I stop trusting the classification and flag the page for review.
         if result.confidence < 0.5:
             params.needs_review = True
             logger.debug(
@@ -146,20 +124,13 @@ class AdaptiveOCRRouter:
         self,
         classifications: list[PageClassificationResult],
     ) -> list[tuple[PageClassificationResult, OCRParameters]]:
-        """Route multiple pages to their OCR parameters.
-
-        Args:
-            classifications: List of page classification results.
-
-        Returns:
-            List of (classification_result, ocr_params) tuples.
-        """
+        # I pair every page with its parameters, then summarise the batch.
         routed = []
         for result in classifications:
             params = self.get_parameters_for_result(result)
             routed.append((result, params))
 
-        # Log summary
+        # One log line, cheaper than making the caller ask for the summary afterwards.
         skip_count = sum(1 for _, p in routed if p.skip_ocr)
         review_count = sum(1 for _, p in routed if p.needs_review)
         logger.info(f"Routed {len(routed)} pages: {skip_count} skipped, {review_count} need review")
@@ -167,11 +138,7 @@ class AdaptiveOCRRouter:
         return routed
 
     def get_routing_summary(self) -> dict[str, dict]:
-        """Get a summary of the routing table for display.
-
-        Returns:
-            Dictionary mapping classification names to their parameters.
-        """
+        # I reshape the table so a CLI can print it without knowing anything about the dataclass.
         summary = {}
         for classification, params in self._routing.items():
             summary[classification.value] = {
@@ -185,9 +152,5 @@ class AdaptiveOCRRouter:
 
 
 def get_default_parameters() -> dict[PageClassification, OCRParameters]:
-    """Get the default routing table.
-
-    Returns:
-        Default routing table.
-    """
+    # A copy, so the caller can poke at it without reaching my defaults.
     return ROUTING_TABLE.copy()

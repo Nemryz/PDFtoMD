@@ -1,4 +1,4 @@
-"""OCR engine — Tesseract wrapper for image-to-text conversion."""
+# The Tesseract wrapper: everything that touches pytesseract lives in this one file.
 
 from __future__ import annotations
 
@@ -14,21 +14,16 @@ _TESSERACT_INITIALIZED = False
 
 
 def initialize_tesseract(tesseract_path: str | None = None, lang: str = "spa") -> None:
-    """Verify Tesseract is available and the requested language is installed.
-
-    Raises:
-        TesseractNotFoundError: If Tesseract binary is not found.
-        TesseractLanguageError: If the requested language pack is missing.
-    """
+    # I check the binary and the language pack before anyone tries to use them.
     global _TESSERACT_INITIALIZED
 
     if tesseract_path:
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
-    # Verify binary exists — check both PATH and common install locations
+    # PATH first, because that's where a normal install lands.
     cmd = pytesseract.pytesseract.tesseract_cmd
     if not shutil.which(cmd):
-        # On Windows, check common install locations
+        # On Windows the installer doesn't always add itself to PATH, so I look in the usual places.
         import platform
 
         if platform.system() == "Windows":
@@ -45,7 +40,7 @@ def initialize_tesseract(tesseract_path: str | None = None, lang: str = "spa") -
         else:
             raise TesseractNotFoundError(cmd)
 
-    # Verify language is available
+    # An empty language list means get_languages failed, so I only check when I can.
     try:
         available_langs = pytesseract.get_languages()
     except Exception:
@@ -58,26 +53,13 @@ def initialize_tesseract(tesseract_path: str | None = None, lang: str = "spa") -
 
 
 def ocr_image(image: Image.Image, lang: str = "spa", config: str = "") -> str:
-    """Run OCR on a PIL Image and return extracted text.
-
-    Args:
-        image: PIL Image to OCR.
-        lang: Tesseract language code (default: spa for Spanish).
-        config: Optional Tesseract config string (e.g. "--psm 6").
-
-    Returns:
-        Extracted text string (may be empty for blank images).
-    """
+    # Straight image_to_string, used when I only need the text.
     text = pytesseract.image_to_string(image, lang=lang, config=config)
     return text.strip()
 
 
 def get_confidence(image: Image.Image, lang: str = "spa") -> float:
-    """Get the average OCR confidence score for an image.
-
-    Returns:
-        Float between 0.0 (no confidence) and 1.0 (full confidence).
-    """
+    # Confidence on its own, which costs a second Tesseract run.
     data = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
 
     confidences = [int(c) for c in data["conf"] if int(c) > 0]
@@ -93,21 +75,7 @@ def ocr_with_confidence(
     lang: str = "spa",
     config: str = "",
 ) -> tuple[str, float]:
-    """Run OCR once, returning both extracted text and average confidence.
-
-    Single-pass alternative to calling ocr_image() + get_confidence()
-    separately, which runs Tesseract twice per page. Uses one
-    pytesseract.image_to_data() call and reconstructs the text from
-    word tokens (US-1: eliminate double-OCR).
-
-    Args:
-        image: PIL Image to OCR.
-        lang: Tesseract language code (default: spa for Spanish).
-        config: Optional Tesseract config string (e.g. "--psm 6").
-
-    Returns:
-        Tuple of (extracted text, average confidence between 0.0 and 1.0).
-    """
+    # The one I use: text and confidence in a single pass, since two passes cost half the runtime.
     data = pytesseract.image_to_data(
         image, lang=lang, config=config, output_type=pytesseract.Output.DICT
     )

@@ -1,4 +1,3 @@
-"""Tests for core pipeline module."""
 
 import tempfile
 from pathlib import Path
@@ -12,11 +11,9 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestConvertPDF:
-    """Tests for convert_pdf() — end-to-end pipeline."""
 
     @pytest.mark.slow
     def test_produces_markdown_file(self):
-        """Full conversion should produce a .md file."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "output.md"
             result = convert_pdf(str(REAL_PDF), str(output), pages=[0, 1])
@@ -27,7 +24,6 @@ class TestConvertPDF:
 
     @pytest.mark.slow
     def test_markdown_has_content(self):
-        """Generated Markdown should have non-empty content."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "output.md"
             convert_pdf(str(REAL_PDF), str(output), pages=[0, 1])
@@ -36,7 +32,6 @@ class TestConvertPDF:
             assert len(content) > 50
 
     def test_raises_on_missing_file(self):
-        """Should raise FileNotFoundError for non-existent input."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "output.md"
             with pytest.raises(FileNotFoundError):

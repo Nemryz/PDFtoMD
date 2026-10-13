@@ -1,4 +1,3 @@
-"""Tests for blank page detection."""
 
 from pathlib import Path
 
@@ -9,10 +8,8 @@ from pdfmd.types import PageClassification
 
 
 class TestBlankPageDetection:
-    """Test blank page detection in PageClassifier."""
 
     def test_blank_page_detected_heuristic(self):
-        """Empty page is detected as blank using heuristic."""
         classifier = PageClassifier()
         # Force heuristic mode
         classifier._ocrsieve_available = False
@@ -30,7 +27,6 @@ class TestBlankPageDetection:
         doc.close()
 
     def test_text_page_not_blank_heuristic(self):
-        """Page with text is not detected as blank using heuristic."""
         classifier = PageClassifier()
         # Force heuristic mode
         classifier._ocrsieve_available = False
@@ -48,7 +44,6 @@ class TestBlankPageDetection:
         doc.close()
 
     def test_blank_page_in_multi_page_heuristic(self):
-        """Blank page detection works in multi-page document (heuristic)."""
         classifier = PageClassifier()
         # Force heuristic mode
         classifier._ocrsieve_available = False
@@ -83,10 +78,8 @@ class TestBlankPageDetection:
 
 
 class TestBlankPageHeuristic:
-    """Test blank page detection via pixel variance."""
 
     def test_pixel_variance_blank(self):
-        """Low pixel variance indicates blank page."""
         classifier = PageClassifier()
 
         # Create a truly blank image (all same pixels)
@@ -104,7 +97,6 @@ class TestBlankPageHeuristic:
         assert variance == 0.0  # Uniform image has 0 variance
 
     def test_pixel_variance_nonblank(self):
-        """Non-uniform image has variance."""
         import numpy as np
         from PIL import Image
 

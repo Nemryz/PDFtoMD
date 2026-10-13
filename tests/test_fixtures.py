@@ -1,4 +1,3 @@
-"""Tests for pipeline against fixture PDFs (US-4, Feature 003)."""
 
 import tempfile
 from pathlib import Path
@@ -11,7 +10,6 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "pdfs"
 
 
 def _convert_fixture(pdf_name: str, category: str):
-    """Convert a fixture PDF and return (result, content) or (None, None)."""
     pdf_path = FIXTURE_DIR / category / pdf_name
     if not pdf_path.exists():
         pytest.skip(f"Fixture not found: {pdf_path}")
@@ -27,7 +25,6 @@ def _convert_fixture(pdf_name: str, category: str):
 
 
 class TestValidFixtures:
-    """Tests for valid PDF fixtures — should produce non-empty Markdown."""
 
     def test_simple_1page(self):
         result, content = _convert_fixture("simple_1page.pdf", "valid")
@@ -67,20 +64,16 @@ class TestValidFixtures:
 
 
 class TestEdgeCaseFixtures:
-    """Tests for edge case PDFs — should be handled gracefully."""
 
     def test_empty_page(self):
-        """Empty PDF should produce output (possibly empty or minimal)."""
         result, content = _convert_fixture("empty.pdf", "edge_cases")
         assert result is not None
 
     def test_blank_pages(self):
-        """Blank pages should produce output without crashing."""
         result, content = _convert_fixture("blank_pages.pdf", "edge_cases")
         assert result is not None
 
     def test_encrypted_pdf(self):
-        """Encrypted PDF should raise a clear error."""
         pdf_path = FIXTURE_DIR / "edge_cases" / "encrypted.pdf"
         if not pdf_path.exists():
             pytest.skip("Fixture not found")
@@ -91,24 +84,20 @@ class TestEdgeCaseFixtures:
                 convert_pdf(str(pdf_path), str(out_path))
 
     def test_corrupted_pdf(self):
-        """Corrupted PDF should be handled gracefully (error or partial output)."""
         result, content = _convert_fixture("corrupted.pdf", "edge_cases")
         # May return None (error) or partial output — both acceptable
 
     def test_only_images(self):
-        """Image-only PDF should produce OCR output."""
         result, content = _convert_fixture("only_images.pdf", "edge_cases")
         assert result is not None
 
     def test_unicode_content(self):
-        """Unicode PDF should preserve special characters."""
         result, content = _convert_fixture("unicode_content.pdf", "edge_cases")
         assert result is not None
         assert len(content) > 0
 
 
 class TestLegalFixtures:
-    """Tests for legal document PDFs."""
 
     def test_decreto(self):
         result, content = _convert_fixture("decreto.pdf", "legal")
@@ -132,10 +121,8 @@ class TestLegalFixtures:
 
 
 class TestBenchmarkFixtures:
-    """Tests for benchmark PDFs (subset — not full conversion)."""
 
     def test_benchmark_50pages_metadata(self):
-        """Verify 50-page benchmark opens and has correct page count."""
         import pymupdf
 
         pdf_path = FIXTURE_DIR / "benchmarks" / "bench_50pages.pdf"

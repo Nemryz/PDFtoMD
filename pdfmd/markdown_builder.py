@@ -1,4 +1,4 @@
-"""Markdown builder — convert content blocks to structured Markdown."""
+# I turn the blocks from one page into Markdown, with a page marker so I can find it later.
 
 from __future__ import annotations
 
@@ -8,21 +8,13 @@ from pdfmd.content_analyzer import Block
 
 
 def _sanitize_list_item(text: str) -> str:
-    """Remove original list markers and return clean text."""
-    # Remove leading markers like "1.", "•", "-", etc.
+    # I strip the bullet or number the OCR left behind.
+    # Covers 1. a) and the bullet characters.
     return re.sub(r"^[\d]+[\.\)]\s*|^[-•●]\s*", "", text).strip()
 
 
 def build_markdown(blocks: list[Block], page_number: int) -> str:
-    """Convert a list of content blocks to Markdown for a single page.
-
-    Args:
-        blocks: List of Block objects from content_analyzer.
-        page_number: 1-based page number for the comment marker.
-
-    Returns:
-        Markdown string for this page.
-    """
+    # I walk the blocks in order and emit one line each, skipping page numbers entirely.
     lines: list[str] = [f"<!-- Page {page_number} -->"]
 
     for block in blocks:

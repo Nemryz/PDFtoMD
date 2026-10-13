@@ -1,4 +1,4 @@
-"""Signature detector — detect signature regions in PDF pages."""
+# I hunt for signature-shaped ink on a page.
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from PIL import Image
 
 @dataclass
 class SignatureRegion:
-    """A detected signature region on a page."""
+    # A box I believe holds a signature, with a rough confidence.
 
     x: int
     y: int
@@ -20,7 +20,7 @@ class SignatureRegion:
 
 @dataclass
 class PageSignatures:
-    """Signature information for a single page."""
+    # What I found on one page, plus who the caller expected.
 
     page_number: int
     signatures: list[SignatureRegion] = field(default_factory=list)
@@ -30,7 +30,7 @@ class PageSignatures:
 
 @dataclass
 class SignatureReport:
-    """Full signature report for the document."""
+    # The rolled-up view across the document.
 
     total_pages: int
     pages_with_signatures: int
@@ -41,46 +41,34 @@ class SignatureReport:
 
 
 def detect_signatures(image: Image.Image) -> list[SignatureRegion]:
-    """Detect potential signature regions in a page image.
-
-    Uses heuristics to find dark ink regions that could be signatures:
-    - Located in the bottom portion of the page
-    - Has reasonable aspect ratio for a signature
-    - Contains dark pixels (ink)
-
-    Args:
-        image: PIL Image of the page.
-
-    Returns:
-        List of SignatureRegion objects (may be empty).
-    """
+    # Signatures sit low on the page, so I only look at the bottom third.
     regions: list[SignatureRegion] = []
 
     width, height = image.size
 
-    # Focus on the bottom 30% of the page where signatures typically appear
+    # The top of that zone, which is where I start cropping.
     bottom_zone_top = int(height * 0.7)
     bottom_zone = image.crop((0, bottom_zone_top, width, height))
 
-    # Convert to grayscale for analysis
+    # I flatten to grey because I'm only counting dark pixels here.
     gray = bottom_zone.convert("L")
 
-    # Simple heuristic: look for dark pixel clusters
-    # This is a basic approach; a production system would use ML
+    # This is a crude heuristic, not a trained model, and it says so.
+    # A real implementation would learn where signatures look like this.
     pixels = list(gray.get_flattened_data())
     total_pixels = len(pixels)
 
     if total_pixels == 0:
         return regions
 
-    # Count dark pixels (potential ink)
+    # Dark pixels are the candidate ink.
     dark_threshold = 128
     dark_pixels = sum(1 for p in pixels if p < dark_threshold)
     dark_ratio = dark_pixels / total_pixels
 
-    # If there's a reasonable amount of dark content, it could be a signature
+    # Too little ink means no signature, too much means it's body text.
     if 0.01 < dark_ratio < 0.15:
-        # Find bounding box of dark pixels
+        # One bounding box over all the ink I found in the zone.
         dark_coords = [
             (i % width, bottom_zone_top + i // width)
             for i, p in enumerate(pixels)
@@ -96,7 +84,7 @@ def detect_signatures(image: Image.Image) -> list[SignatureRegion]:
             sig_width = x_max - x_min
             sig_height = y_max - y_min
 
-            # Reasonable signature dimensions
+            # A signature is wide and short, so I check the proportions.
             if 50 < sig_width < width * 0.5 and 20 < sig_height < height * 0.15:
                 regions.append(
                     SignatureRegion(
@@ -116,19 +104,7 @@ def match_signer(
     signers: list[str],
     page_text: str = "",
 ) -> str | None:
-    """Try to match a signature region to a known signer.
-
-    Uses text proximity — if a signer's name appears near the
-    signature region in the OCR text, we assume it's their signature.
-
-    Args:
-        region: Detected signature region.
-        signers: List of expected signer names.
-        page_text: OCR text of the page for name matching.
-
-    Returns:
-        Matched signer name or None.
-    """
+    # I match by name proximity in the page text, which is a guess, not a proof.
     if not signers or not page_text:
         return None
 
@@ -142,14 +118,7 @@ def match_signer(
 
 
 def generate_signature_report(pages: list[PageSignatures]) -> SignatureReport:
-    """Generate a summary report of signature detection.
-
-    Args:
-        pages: List of PageSignatures for each page.
-
-    Returns:
-        SignatureReport with summary statistics.
-    """
+    # I roll the per-page results into one report and list anyone who never matched.
     all_expected: set[str] = set()
     all_matched: set[str] = set()
 

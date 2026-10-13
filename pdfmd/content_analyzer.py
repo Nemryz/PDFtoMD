@@ -1,4 +1,4 @@
-"""Content analyzer — detect document structure from OCR text."""
+# I read the OCR text of one page and work out what kind of block each line is.
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Block:
-    """A logical content block extracted from a page."""
+    # One piece of a page: a heading, a paragraph, a list item, whatever it turned out to be.
 
     type: str  # heading, paragraph, list_item, page_number, header
     text: str
@@ -16,23 +16,23 @@ class Block:
 
 
 def detect_heading(text: str) -> bool:
-    """Detect if a line is a heading (all caps, short, or with colon)."""
+    # I call a line a heading when it's short, shouted, or ends in a colon.
     text = text.strip()
     if not text:
         return False
     if len(text) > 80:
         return False
-    # All uppercase
+    # All caps is the usual giveaway.
     if text.isupper() and len(text) > 3:
         return True
-    # Short with colon
+    # A colon at the end of a short line usually introduces a list.
     if len(text) < 40 and text.endswith(":"):
         return True
     return False
 
 
 def detect_list_item(text: str) -> bool:
-    """Detect if a line is a list item (bullet, number, dash)."""
+    # I match the usual bullet and numbering shapes.
     text = text.strip()
     if not text:
         return False
@@ -45,24 +45,24 @@ def detect_list_item(text: str) -> bool:
 
 
 def detect_page_number(text: str) -> bool:
-    """Detect if a line is just a page number."""
+    # Page numbers are the one thing I actively throw away later, so I flag them here.
     text = text.strip()
     if not text:
         return False
-    # Roman numerals
+    # Roman numerals show up in front matter more than anywhere else.
     if re.match(r"^[ivxlcdmIVXLCDM]+$", text):
         return True
-    # Just a number
+    # A bare number is almost always a page number.
     if re.match(r"^\d{1,4}$", text):
         return True
-    # "Página N" or "Page N"
+    # Some publishers spell it out, so I accept both languages.
     if re.match(r"^(?:Página|Page|Pág|Pg)\s*\d+$", text, re.IGNORECASE):
         return True
     return False
 
 
 def detect_header(text: str, page_num: int) -> bool:
-    """Detect if text is a repeated page header."""
+    # Repeated headers are short, uppercase, and never on page one.
     text = text.strip()
     if not text:
         return False
@@ -70,22 +70,14 @@ def detect_header(text: str, page_num: int) -> bool:
         return False
     if page_num <= 1:
         return False
-    # Short uppercase text on non-first pages
+    # Short uppercase on a page past the first is my only signal here.
     if text.isupper() and len(text) > 3:
         return True
     return False
 
 
 def analyze_page(text: str, confidence: float) -> list[Block]:
-    """Analyze a page's OCR text and return structured blocks.
-
-    Args:
-        text: Raw OCR text from a single page.
-        confidence: OCR confidence score (0.0-1.0).
-
-    Returns:
-        List of Block objects with type, text, and confidence.
-    """
+    # I walk each line, hand back blocks in order, each carrying the page confidence.
     blocks: list[Block] = []
 
     if not text or not text.strip():

@@ -1,4 +1,3 @@
-"""Coverage tests for CLI module (US-5, Feature 003)."""
 
 import tempfile
 from pathlib import Path

@@ -1,4 +1,3 @@
-"""Tests for content_analyzer module."""
 
 from pdfmd.content_analyzer import (
     analyze_page,
@@ -10,7 +9,6 @@ from pdfmd.content_analyzer import (
 
 
 class TestDetectHeading:
-    """Tests for detect_heading()."""
 
     def test_all_caps_line_is_heading(self):
         assert detect_heading("DEMANDA JUDICIAL") is True
@@ -34,7 +32,6 @@ class TestDetectHeading:
 
 
 class TestDetectListItem:
-    """Tests for detect_list_item()."""
 
     def test_bullet_item(self):
         assert detect_list_item("- First item") is True
@@ -53,7 +50,6 @@ class TestDetectListItem:
 
 
 class TestDetectPageNumber:
-    """Tests for detect_page_number()."""
 
     def test_standalone_number(self):
         assert detect_page_number("5") is True
@@ -72,7 +68,6 @@ class TestDetectPageNumber:
 
 
 class TestDetectHeader:
-    """Tests for detect_header()."""
 
     def test_repeated_header(self):
         assert detect_header("EXPEDIENTE JUDICIAL", page_num=5) is True
@@ -89,7 +84,6 @@ class TestDetectHeader:
 
 
 class TestAnalyzePage:
-    """Tests for analyze_page()."""
 
     def test_returns_list_of_blocks(self):
         result = analyze_page("Hello world", 0.95)
