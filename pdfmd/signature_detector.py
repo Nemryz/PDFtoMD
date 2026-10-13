@@ -1,4 +1,4 @@
-# I hunt for signature-shaped ink on a page.
+# I hunt for ink that is shaped like a signature.
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ class PageSignatures:
 
 @dataclass
 class SignatureReport:
-    # The rolled-up view across the document.
+    # The summary view across the document.
 
     total_pages: int
     pages_with_signatures: int
@@ -118,7 +118,7 @@ def match_signer(
 
 
 def generate_signature_report(pages: list[PageSignatures]) -> SignatureReport:
-    # I roll the per-page results into one report and list anyone who never matched.
+    # I roll the results from each page into one report and list anyone who never matched.
     all_expected: set[str] = set()
     all_matched: set[str] = set()
 

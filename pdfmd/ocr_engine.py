@@ -67,7 +67,7 @@ def get_confidence(image: Image.Image, lang: str = "spa") -> float:
         return 0.0
 
     avg = sum(confidences) / len(confidences)
-    return avg / 100.0  # Normalize to 0.0–1.0
+    return avg / 100.0  # Normalize to the range zero to one.
 
 
 def ocr_with_confidence(

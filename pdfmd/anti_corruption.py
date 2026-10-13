@@ -1,4 +1,4 @@
-# Safe file writes, borrowed from the SDD-Kit patterns: never leave a half-written file behind.
+# Safe file writes, borrowed from the SDD Kit patterns: never leave a half written file behind.
 
 from __future__ import annotations
 
@@ -66,6 +66,6 @@ def safe_read_json(path: str | Path, default: Any = None) -> Any:
 
 
 def safe_write_json(path: str | Path, data: Any, indent: int = 2) -> None:
-    # Same temp-then-rename dance as write_text_atomic, but for JSON.
+    # Same temp file then rename trick as write_text_atomic, but for JSON.
     content = json.dumps(data, indent=indent, ensure_ascii=False)
     atomic_write(path, content + "\n")

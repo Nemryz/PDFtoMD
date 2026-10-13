@@ -105,7 +105,7 @@ def quality_score(report: QualityReport) -> float:
         + report.noise_patterns * 1.0
     )
 
-    # Without this a 400-page document scores worse purely for existing.
+    # Without this a document of 400 pages scores worse purely for existing.
     normalized = (penalties / total_words) * 100
 
     # Clamp, because accumulated penalties can overshoot zero.
@@ -114,7 +114,7 @@ def quality_score(report: QualityReport) -> float:
 
 
 def _count_broken_sentences(lines: list[str]) -> int:
-    # A line ending on a lowercase vowel with no punctuation is almost always a cut-off word.
+    # A line ending on a lowercase vowel with no punctuation is almost always a word cut short.
     count = 0
     for i, line in enumerate(lines):
         stripped = line.strip()

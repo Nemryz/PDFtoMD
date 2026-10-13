@@ -28,7 +28,7 @@ class TestValidateEncoding:
         with tempfile.TemporaryDirectory() as tmpdir:
             md = Path(tmpdir) / "doc.md"
             md.write_bytes(b"Normal text\n")
-            # Write a byte that's invalid UTF-8
+            # Write a byte that valid UTF8 cannot represent.
             with open(md, "ab") as f:
                 f.write(b"\xff\xfe")
             errors = validate_encoding(str(md))

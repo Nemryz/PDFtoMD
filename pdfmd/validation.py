@@ -27,7 +27,7 @@ def validate_output(output_dir: str) -> dict:
     if not content.strip():
         warnings.append(f"Markdown file is empty: {md_path.name}")
 
-    # Page markers are how I count pages without re-reading the PDF.
+    # Page markers are how I count pages without reading the PDF again.
     page_markers = len(re.findall(r"<!-- Page \d+ -->", content))
     if page_markers == 0:
         warnings.append("No page markers found in Markdown")
@@ -109,7 +109,7 @@ def validate_table_format(text: str) -> list[str]:
                 in_table = True
                 expected_cols = cols
             elif re.match(r"^\|[\s\-:|]+\|$", stripped):
-                pass  # Separator row — skip
+                pass  # Separator row, which I skip.
             else:
                 if cols != expected_cols:
                     errors.append(f"Table row {i}: expected {expected_cols} columns, got {cols}")

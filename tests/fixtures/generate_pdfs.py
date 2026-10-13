@@ -202,7 +202,7 @@ def create_corrupted():
 def create_only_images():
     doc = pymupdf.open()
     page = doc.new_page(width=595, height=842)
-    # Draw multiple colored rectangles (simulating image-only pages)
+    # Draw several coloured rectangles, so the page looks like it has only images
     colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0)]
     for i, color in enumerate(colors):
         shape = page.new_shape()

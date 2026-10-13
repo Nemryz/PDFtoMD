@@ -27,7 +27,7 @@ def open_pdf(path: str) -> Document:
 
 
 def get_page_count(doc: Document) -> int:
-    # Page count, which is also my blank-page check upstream.
+    # Page count, which is also my blank page check upstream.
     return doc.page_count
 
 
