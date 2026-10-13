@@ -23,7 +23,7 @@ class TestRenderPage:
         doc = open_pdf(str(REAL_PDF))
         page = doc[0]
         img = render_page(page, dpi=300)
-        # Real PDF may vary, but should be roughly 2400-2600 x 3400-3800
+        # A real PDF may vary, but should land near 2400 by 3400 pixels.
         assert 2400 <= img.width <= 2600
         assert 3400 <= img.height <= 3800
         doc.close()

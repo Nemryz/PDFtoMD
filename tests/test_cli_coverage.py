@@ -28,7 +28,7 @@ class TestCLIHelp:
 class TestCLIVersion:
     def test_version_flag(self):
         result = runner.invoke(app, ["--version"])
-        # Typer --version exits with code 0 or 2 depending on config
+        # The Typer version flag exits with code 0 or 2 depending on config.
         assert result.exit_code in (0, 2)
         assert "pdfmd" in result.output.lower() or "version" in result.output.lower()
 

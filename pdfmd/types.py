@@ -52,7 +52,7 @@ class OCRParameters:
     # I render the page at this DPI.
 
     psm: int = 6
-    # Passed straight to Tesseract as --psm.
+    # Passed straight to Tesseract as the psm flag.
 
     lang: str = "eng+spa"
     # Language packs, same syntax Tesseract uses.
@@ -78,7 +78,7 @@ class PageClassificationResult:
     # One page's verdict.
 
     page_number: int
-    # 1-indexed, to match what the reader sees.
+    # Counting from one, to match what the reader sees.
 
     classification: PageClassification
     # The bucket itself.
@@ -90,7 +90,7 @@ class PageClassificationResult:
     # Whether this page needs OCR at all.
 
     needs_strong_ocr: bool
-    # Whether it needs the handwriting-tuned parameters.
+    # Whether it needs parameters tuned for handwriting.
 
     ocr_params: OCRParameters | None = None
     # The router fills this in after classification.
@@ -107,4 +107,4 @@ class PreprocessedImage:
     # Which enhancers actually ran, which may differ from what was asked.
 
     processing_time_ms: float
-    # Wall-clock cost, useful when tuning the gate.
+    # Wall clock cost, useful when tuning the gate.

@@ -1,4 +1,4 @@
-# Clean-up for scanned pages before OCR sees them.
+# Cleanup for scanned pages before OCR sees them.
 
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ class ImagePreprocessor:
         # Low contrast is the most common problem in scans.
         stat = ImageStat.Stat(img)
         if len(stat.stddev) >= 3:
-            # I work in HSV because luminance alone hides washed-out colour.
+            # I work in HSV because luminance alone hides washed out colour.
             avg_std = sum(stat.stddev[:3]) / 3
         else:
             # Grey has no saturation, so the check only means something for colour.
@@ -80,7 +80,7 @@ class ImagePreprocessor:
                 f"Low contrast detected (stddev={avg_std:.1f}), adding contrast enhancement"
             )
 
-        # The Laplacian picks up high-frequency speckle, which is what noise looks like.
+        # The Laplacian picks up speckle at high frequencies, which is what noise looks like.
         try:
             import cv2
             import numpy as np
@@ -147,7 +147,7 @@ class ImagePreprocessor:
         # Same numpy hop as above.
         img_array = np.array(img)
 
-        # A plain Otsu implementation on the 256-bin histogram.
+        # A plain Otsu implementation on a histogram with 256 bins.
         threshold = self._otsu_threshold(img_array)
 
         # Apply threshold
@@ -167,7 +167,7 @@ class ImagePreprocessor:
         hist, _ = np.histogram(histogram, bins=256, range=(0, 256))
         total = histogram.size
 
-        # Between-class variance is what Otsu maximises.
+        # The variance between the two classes is what Otsu maximises.
         sum_total = np.sum(np.arange(256) * hist)
         sum_bg = 0
         weight_bg = 0
@@ -231,6 +231,6 @@ def preprocess_image(
     img: Image.Image,
     steps: list[str] | None = None,
 ) -> PreprocessedImage:
-    # A shortcut for the common case of preprocess-then-analyse.
+    # A shortcut for the common case of preprocessing then analysing.
     preprocessor = ImagePreprocessor()
     return preprocessor.preprocess(img, steps=steps)

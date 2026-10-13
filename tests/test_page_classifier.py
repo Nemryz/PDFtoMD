@@ -122,7 +122,7 @@ class TestPageClassifier:
             PageClassification.TYPED_CLEAN,
             PageClassification.TYPED_ANNOTATED,
         ]
-        # needs_ocr depends on ocrsieve model - just check it's a bool
+        # needs_ocr depends on the ocrsieve model, so I just check it is a bool.
         assert isinstance(result.needs_ocr, bool)
 
         doc.close()

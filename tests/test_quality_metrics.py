@@ -38,7 +38,7 @@ class TestMeasureTextQuality:
         assert report.broken_sentences == 0
 
     def test_broken_sentences_no_break_at_end(self):
-        # Last line has no next line — not a break
+        # The last line has no next line, so it is not a break.
         text = "Ultima linea sin punto\n"
         report = measure_text_quality(text)
         assert report.broken_sentences == 0

@@ -135,7 +135,7 @@ class PageClassifier:
         # The fallback, built from pixel variance and what PyMuPDF can tell me.
         page = doc[page_index]
 
-        # Pixel variance is the cheapest blank-page test I have.
+        # Pixel variance is the cheapest blank page test I have.
         if self._is_blank_page(page):
             return PageClassificationResult(
                 page_number=page_number,
@@ -153,7 +153,7 @@ class PageClassifier:
         images = page.get_images()
         image_count = len(images)
 
-        # Coverage matters more than count: a full-page figure is one image.
+        # Coverage matters more than count: a figure that fills the page is one image.
         page_rect = page.rect
         page_area = page_rect.width * page_rect.height
         image_area = 0
@@ -218,7 +218,7 @@ class PageClassifier:
     def _is_blank_page(self, page: pymupdf.Page, threshold: float = 0.001) -> bool:
         # I render small and look at variance, because a blank page has almost none.
         try:
-            # Low resolution is enough to tell blank from not-blank.
+            # Low resolution is enough to tell blank from not blank.
             mat = pymupdf.Matrix(0.5, 0.5)  # Low res for speed
             pix = page.get_pixmap(matrix=mat)
 

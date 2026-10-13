@@ -56,6 +56,6 @@ class TestSinglePassPipeline:
             output = Path(tmpdir) / "output.md"
             result = convert_pdf(str(REAL_PDF), str(output), pages=[0, 1, 2])
 
-        # No classify -> no retry -> exactly one call per OCR'd page
+        # Without classification there is no retry, so exactly one call per page.
         assert result.pages_with_ocr >= 1
         assert len(calls) == result.pages_with_ocr

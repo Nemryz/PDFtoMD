@@ -112,4 +112,4 @@ class TestBlankPageHeuristic:
         mean = img_array.mean()
         variance = ((img_array - mean) ** 2).mean()
 
-        assert variance > 0  # Non-uniform has variance
+        assert variance > 0  # A page with content has variance.

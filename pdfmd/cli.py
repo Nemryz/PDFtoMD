@@ -82,18 +82,18 @@ def convert(
     else:
         out_path = input_file.with_suffix(".md")
 
-    # The page spec is a range string like 1-20, so I parse it into a list first.
+    # The page spec is a range string like 5 to 20, so I parse it into a list first.
     page_indices = None
     if pages:
         page_indices = _parse_pages(pages)
 
-    # --max-pages is a hard stop, checked before I touch the document.
+    # The max pages flag is a hard stop, checked before I touch the document.
     if max_pages > 0 and page_indices is not None:
         page_indices = page_indices[:max_pages]
     elif max_pages > 0 and page_indices is None:
         page_indices = list(range(max_pages))
 
-    # --signers lets the caller list who they expect to have signed.
+    # The signers flag lets the caller list who they expect to have signed.
     signer_list = None
     if signers:
         signer_list = [s.strip() for s in signers.split(",") if s.strip()]
@@ -138,7 +138,7 @@ def convert(
 
 
 def _parse_pages(pages_str: str) -> list[int]:
-    # I accept 5, 1-20, 1-5,10-12 and treat an empty string as everything.
+    # I accept 5, 1 to 20, 1 to 5 and 10 to 12, and treat an empty string as everything.
     indices: list[int] = []
     for part in pages_str.split(","):
         part = part.strip()
@@ -196,7 +196,7 @@ def _display_results(result) -> None:
 def info(
     input_path: str = typer.Argument(..., help="Path to PDF file"),
 ) -> None:
-    # --info answers what's in a PDF without converting it.
+    # The info flag answers what is in a PDF without converting it.
     from pdfmd.pdf_reader import get_page_count, has_text_layer, open_pdf
 
     try:

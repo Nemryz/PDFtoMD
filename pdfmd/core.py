@@ -151,7 +151,7 @@ def convert_pdf(
             img = render_page(page, dpi=render_dpi)
 
             # I gate preprocessing on image quality. Good scans skip it; retries always run it.
-            # The gate skips preprocessing on good-quality images; the retry
+            # The gate skips preprocessing on images of good quality; the retry
             # path below always preprocesses (targeted corrective action).
             if classify and image_preprocessor and ocr_params.preprocess:
                 if should_preprocess(img):

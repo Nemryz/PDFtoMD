@@ -85,7 +85,7 @@ class TestEdgeCaseFixtures:
 
     def test_corrupted_pdf(self):
         result, content = _convert_fixture("corrupted.pdf", "edge_cases")
-        # May return None (error) or partial output — both acceptable
+        # May return None on error, or partial output; both are acceptable.
 
     def test_only_images(self):
         result, content = _convert_fixture("only_images.pdf", "edge_cases")

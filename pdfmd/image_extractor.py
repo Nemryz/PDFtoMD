@@ -14,7 +14,7 @@ class ExtractedImage:
     # One image, still in memory, with the page it came from.
 
     data: bytes
-    page: int  # 1-based page number
+    page: int  # counting from one.
     index: int  # Image index on the page
     width: int
     height: int
