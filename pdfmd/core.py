@@ -9,6 +9,9 @@ from pathlib import Path
 from pdfmd.adaptive_router import AdaptiveOCRRouter
 from pdfmd.anti_corruption import atomic_write, safe_write_json
 from pdfmd.content_analyzer import Block, analyze_page
+from pdfmd.detectors import DetectionContext, run_detectors
+
+# Importing the module is what puts the signature detector in the registry.
 from pdfmd.image_extractor import deduplicate, extract_images, save_images
 from pdfmd.image_preprocessor import ImagePreprocessor, should_preprocess
 from pdfmd.markdown_builder import build_markdown
@@ -20,7 +23,6 @@ from pdfmd.pdf_reader import extract_page_text, get_page_count, has_text_layer, 
 from pdfmd.quality_metrics import measure_text_quality
 from pdfmd.signature_detector import (
     PageSignatures,
-    detect_signatures,
     generate_signature_report,
     match_signer,
 )
@@ -209,7 +211,13 @@ def convert_pdf(
 
             # Signer matching only costs anything if the caller said who to look for.
             if signers:
-                sig_regions = detect_signatures(img)
+                # I ask the registry for signatures rather than calling a module,
+                # so adding another mark detector later touches nothing here.
+                detection = run_detectors(
+                    DetectionContext(page_number=page_num, text=text, image=img),
+                    names=["signatures"],
+                )
+                sig_regions = detection.notes.get("signature_regions", [])
                 matched = []
                 for sig in sig_regions:
                     signer = match_signer(sig, signers, page_text=text)

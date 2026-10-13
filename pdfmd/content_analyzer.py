@@ -13,6 +13,9 @@ class Block:
     type: str  # heading, paragraph, list_item, page_number, header
     text: str
     confidence: float
+    bbox: tuple[int, int, int, int] | None = None  # left, top, right, bottom in pixels
+    level: int = 0  # nesting depth, so a heading knows whether it is an H1 or an H3
+    source: str = "heuristic"  # heuristic, ocrsieve, or a model later on
 
 
 def detect_heading(text: str) -> bool:
