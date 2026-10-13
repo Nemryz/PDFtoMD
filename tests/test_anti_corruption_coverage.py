@@ -1,4 +1,3 @@
-"""Coverage tests for anti_corruption module."""
 
 import json
 import tempfile

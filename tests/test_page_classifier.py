@@ -1,4 +1,3 @@
-"""Tests for page classifier module."""
 
 from pathlib import Path
 
@@ -10,10 +9,8 @@ from pdfmd.types import PageClassification, PageClassificationResult
 
 
 class TestPageClassification:
-    """Test PageClassification enum."""
 
     def test_classification_values(self):
-        """All classification types exist."""
         assert PageClassification.BLANK.value == "blank"
         assert PageClassification.TYPED_CLEAN.value == "typed_clean"
         assert PageClassification.TYPED_SIGNED.value == "typed_signed"
@@ -23,7 +20,6 @@ class TestPageClassification:
         assert PageClassification.UNKNOWN.value == "unknown"
 
     def test_from_ocrsieve_mapping(self):
-        """ocrsieve labels map correctly."""
         assert PageClassification.from_ocrsieve("blank") == PageClassification.BLANK
         assert PageClassification.from_ocrsieve("typed_clean") == PageClassification.TYPED_CLEAN
         assert PageClassification.from_ocrsieve("typed_signed") == PageClassification.TYPED_SIGNED
@@ -35,21 +31,17 @@ class TestPageClassification:
         assert PageClassification.from_ocrsieve("digital_text") == PageClassification.TYPED_CLEAN
 
     def test_from_ocrsieve_unknown(self):
-        """Unknown labels map to UNKNOWN."""
         assert PageClassification.from_ocrsieve("unknown_label") == PageClassification.UNKNOWN
         assert PageClassification.from_ocrsieve("") == PageClassification.UNKNOWN
 
 
 class TestPageClassifier:
-    """Test PageClassifier class."""
 
     def test_classifier_initializes(self):
-        """Classifier can be created."""
         classifier = PageClassifier()
         assert classifier is not None
 
     def test_classify_page_returns_result(self):
-        """classify_page returns a PageClassificationResult."""
         classifier = PageClassifier()
 
         # Create a simple test PDF
@@ -69,7 +61,6 @@ class TestPageClassifier:
         doc.close()
 
     def test_classify_page_number_is_1_indexed(self):
-        """Page numbers are 1-indexed."""
         classifier = PageClassifier()
 
         doc = pymupdf.open()
@@ -85,7 +76,6 @@ class TestPageClassifier:
         doc.close()
 
     def test_classify_document_returns_list(self):
-        """classify_document returns list of results."""
         classifier = PageClassifier()
 
         # Create test PDF with 3 pages
@@ -111,14 +101,12 @@ class TestPageClassifier:
             temp_path.unlink(missing_ok=True)
 
     def test_classify_document_file_not_found(self):
-        """classify_document raises FileNotFoundError for missing file."""
         classifier = PageClassifier()
 
         with pytest.raises(FileNotFoundError):
             classifier.classify_document("nonexistent.pdf")
 
     def test_classify_text_page(self):
-        """Page with text is classified as typed."""
         classifier = PageClassifier()
 
         doc = pymupdf.open()
@@ -140,7 +128,6 @@ class TestPageClassifier:
         doc.close()
 
     def test_classify_blank_page(self):
-        """Blank page is classified as blank."""
         classifier = PageClassifier()
 
         doc = pymupdf.open()
@@ -154,7 +141,6 @@ class TestPageClassifier:
         doc.close()
 
     def test_heuristic_fallback_works(self):
-        """Heuristic classifier works when ocrsieve unavailable."""
         classifier = PageClassifier()
 
         # Force heuristic mode
@@ -174,11 +160,9 @@ class TestPageClassifier:
 
 
 class TestPageClassifierWithRealPDF:
-    """Integration tests with real PDF files."""
 
     @pytest.fixture
     def sample_pdf(self):
-        """Create a sample PDF for testing."""
         doc = pymupdf.open()
 
         # Page 1: Text
@@ -201,7 +185,6 @@ class TestPageClassifierWithRealPDF:
         temp_path.unlink(missing_ok=True)
 
     def test_classifies_multiple_pages(self, sample_pdf):
-        """Classifies all pages in a multi-page document."""
         classifier = PageClassifier()
         results = classifier.classify_document(sample_pdf)
 
@@ -211,7 +194,6 @@ class TestPageClassifierWithRealPDF:
         assert results[2].classification != PageClassification.BLANK
 
     def test_classification_confidence_range(self, sample_pdf):
-        """All confidence scores are between 0 and 1."""
         classifier = PageClassifier()
         results = classifier.classify_document(sample_pdf)
 

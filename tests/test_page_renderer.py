@@ -1,4 +1,3 @@
-"""Tests for page_renderer module."""
 
 from pathlib import Path
 
@@ -10,10 +9,8 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestRenderPage:
-    """Tests for render_page()."""
 
     def test_returns_pil_image(self):
-        """render_page should return a PIL Image."""
         from PIL import Image
 
         doc = open_pdf(str(REAL_PDF))
@@ -23,7 +20,6 @@ class TestRenderPage:
         doc.close()
 
     def test_300_dpi_dimensions(self):
-        """At 300 DPI, a letter-size page should be ~2481x3508 pixels."""
         doc = open_pdf(str(REAL_PDF))
         page = doc[0]
         img = render_page(page, dpi=300)
@@ -33,7 +29,6 @@ class TestRenderPage:
         doc.close()
 
     def test_different_dpi(self):
-        """Different DPI values should produce different sized images."""
         doc = open_pdf(str(REAL_PDF))
         page = doc[0]
         img_150 = render_page(page, dpi=150)

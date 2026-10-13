@@ -1,4 +1,3 @@
-"""Tests for image_extractor module."""
 
 import tempfile
 from pathlib import Path
@@ -11,17 +10,14 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestExtractImages:
-    """Tests for extract_images()."""
 
     def test_returns_list(self):
-        """extract_images should return a list."""
         doc = open_pdf(str(REAL_PDF))
         images = extract_images(doc, pages=[0])
         assert isinstance(images, list)
         doc.close()
 
     def test_extracts_from_page_with_images(self):
-        """Pages with embedded images should produce results."""
         doc = open_pdf(str(REAL_PDF))
         images = extract_images(doc, pages=[0])
         # Result may be empty if page has no embedded images (scanned PDFs
@@ -31,10 +27,8 @@ class TestExtractImages:
 
 
 class TestDeduplicate:
-    """Tests for deduplicate()."""
 
     def test_removes_duplicates(self):
-        """Duplicate images should be removed."""
         from pdfmd.image_extractor import ExtractedImage
 
         img1 = ExtractedImage(data=b"same_data", page=1, index=0, width=100, height=100)
@@ -45,16 +39,13 @@ class TestDeduplicate:
         assert len(result) == 2
 
     def test_empty_list(self):
-        """Empty input should return empty output."""
         result = deduplicate([])
         assert result == []
 
 
 class TestSaveImages:
-    """Tests for save_images()."""
 
     def test_saves_to_directory(self):
-        """Images should be saved to the output directory."""
         from pdfmd.image_extractor import ExtractedImage
 
         with tempfile.TemporaryDirectory() as tmpdir:

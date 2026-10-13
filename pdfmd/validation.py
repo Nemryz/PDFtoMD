@@ -1,4 +1,4 @@
-"""Validation module — check output quality and consistency."""
+# I check the output after a conversion and report what's off.
 
 from __future__ import annotations
 
@@ -7,24 +7,14 @@ from pathlib import Path
 
 
 def validate_output(output_dir: str) -> dict:
-    """Validate the output directory of a conversion.
-
-    Checks for:
-    - Markdown file exists
-    - Markdown is not empty
-    - Page comment markers are present
-    - metadata.json exists and is valid
-
-    Returns:
-        Dictionary with keys: valid, errors, warnings, page_markers_found.
-    """
+    # I look at a whole output directory and collect every problem I find.
     errors: list[str] = []
     warnings: list[str] = []
     page_markers = 0
 
     out = Path(output_dir)
 
-    # Find Markdown file
+    # The Markdown is the only file I really need.
     md_files = list(out.glob("*.md"))
     if not md_files:
         errors.append("No Markdown file found in output directory")
@@ -33,11 +23,11 @@ def validate_output(output_dir: str) -> dict:
     md_path = md_files[0]
     content = md_path.read_text(encoding="utf-8")
 
-    # Check not empty
+    # An empty file means the conversion produced nothing.
     if not content.strip():
         warnings.append(f"Markdown file is empty: {md_path.name}")
 
-    # Count page markers
+    # Page markers are how I count pages without re-reading the PDF.
     page_markers = len(re.findall(r"<!-- Page \d+ -->", content))
     if page_markers == 0:
         warnings.append("No page markers found in Markdown")
@@ -51,14 +41,7 @@ def validate_output(output_dir: str) -> dict:
 
 
 def validate_encoding(file_path: str) -> list[str]:
-    """Check that file is valid UTF-8.
-
-    Args:
-        file_path: Path to the Markdown file.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # Broken encodings show up as mojibake later, so I check here.
     errors: list[str] = []
     try:
         Path(file_path).read_text(encoding="utf-8")
@@ -68,23 +51,15 @@ def validate_encoding(file_path: str) -> list[str]:
 
 
 def validate_image_refs(file_path: str, output_dir: str) -> list[str]:
-    """Check that all image references point to existing files.
-
-    Args:
-        file_path: Path to the Markdown file.
-        output_dir: Directory containing the output (for resolving relative paths).
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # A missing image is worse than a broken one, since the Markdown won't render.
     errors: list[str] = []
     content = Path(file_path).read_text(encoding="utf-8")
     out = Path(output_dir)
 
-    # Match ![alt](path) patterns
+    # I match the inline image syntax to find the references.
     for match in re.finditer(r"!\[.*?\]\((.*?)\)", content):
         ref = match.group(1)
-        # Resolve relative to output directory
+        # Paths are relative to the output directory, which is how Markdown resolves them.
         img_path = out / ref
         if not img_path.exists():
             errors.append(f"Missing image reference: {ref}")
@@ -92,14 +67,7 @@ def validate_image_refs(file_path: str, output_dir: str) -> list[str]:
 
 
 def validate_duplicate_paragraphs(text: str) -> list[str]:
-    """Check for consecutive duplicate paragraphs.
-
-    Args:
-        text: Markdown content.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # The same paragraph twice running usually means a duplicated page.
     errors: list[str] = []
     paragraphs = re.split(r"\n\s*\n", text)
 
@@ -113,14 +81,7 @@ def validate_duplicate_paragraphs(text: str) -> list[str]:
 
 
 def validate_header_hierarchy(text: str) -> list[str]:
-    """Check that header hierarchy is valid (no skipped levels).
-
-    Args:
-        text: Markdown content.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # Skipping from H2 to H4 breaks most Markdown renderers, so I flag it.
     errors: list[str] = []
     last_level = 0
 
@@ -135,14 +96,7 @@ def validate_header_hierarchy(text: str) -> list[str]:
 
 
 def validate_table_format(text: str) -> list[str]:
-    """Check that tables have valid Markdown format.
-
-    Args:
-        text: Markdown content.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # A table needs its pipes lined up, or it renders as plain text.
     errors: list[str] = []
     in_table = False
     expected_cols = 0
@@ -166,14 +120,7 @@ def validate_table_format(text: str) -> list[str]:
 
 
 def validate_page_markers(text: str) -> list[str]:
-    """Check that page markers are in sequential order.
-
-    Args:
-        text: Markdown content.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # Markers should count up from one without gaps.
     errors: list[str] = []
     markers = re.findall(r"<!-- Page (\d+) -->", text)
 
@@ -190,18 +137,10 @@ def validate_page_markers(text: str) -> list[str]:
 
 
 def validate_line_length(text: str, max_length: int = 200) -> list[str]:
-    """Check that no lines exceed the maximum length (except tables).
-
-    Args:
-        text: Markdown content.
-        max_length: Maximum allowed line length.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # Very long lines are hard to read, though tables are exempt.
     errors: list[str] = []
     for i, line in enumerate(text.split("\n"), 1):
-        # Skip table lines (start with |)
+        # Tables are allowed to run long, that's what they do.
         if line.strip().startswith("|"):
             continue
         if len(line) > max_length:
@@ -210,15 +149,7 @@ def validate_line_length(text: str, max_length: int = 200) -> list[str]:
 
 
 def validate_metadata_consistency(file_path: str, metadata: dict) -> list[str]:
-    """Check that page count in metadata matches page markers in Markdown.
-
-    Args:
-        file_path: Path to the Markdown file.
-        metadata: Parsed metadata.json dictionary.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # The metadata count and the markers should agree, otherwise I lost or duplicated a page.
     errors: list[str] = []
     content = Path(file_path).read_text(encoding="utf-8")
     marker_count = len(re.findall(r"<!-- Page \d+ -->", content))
@@ -232,15 +163,7 @@ def validate_metadata_consistency(file_path: str, metadata: dict) -> list[str]:
 
 
 def validate_signature_placeholders(text: str, signatures_detected: bool = False) -> list[str]:
-    """Check that signature placeholders are present when signatures were detected.
-
-    Args:
-        text: Markdown content.
-        signatures_detected: Whether signatures were detected in the PDF.
-
-    Returns:
-        List of error messages (empty if valid).
-    """
+    # A detected signature with no placeholder in the text means the writer dropped it.
     errors: list[str] = []
     if signatures_detected:
         has_markers = bool(re.search(r"<!-- SIGNATURE:.*?-->", text))

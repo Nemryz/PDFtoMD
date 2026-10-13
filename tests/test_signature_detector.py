@@ -1,4 +1,3 @@
-"""Tests for signature_detector module."""
 
 from pathlib import Path
 
@@ -18,10 +17,8 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestDetectSignatures:
-    """Tests for detect_signatures()."""
 
     def test_returns_list(self):
-        """detect_signatures should return a list of SignatureRegion."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=150)  # Low DPI for speed
         result = detect_signatures(img)
@@ -29,7 +26,6 @@ class TestDetectSignatures:
         doc.close()
 
     def test_returns_signature_region_type(self):
-        """Each result should be a SignatureRegion."""
         doc = open_pdf(str(REAL_PDF))
         img = render_page(doc[0], dpi=150)
         result = detect_signatures(img)
@@ -39,10 +35,8 @@ class TestDetectSignatures:
 
 
 class TestMatchSigner:
-    """Tests for match_signer()."""
 
     def test_matches_known_signer(self):
-        """Signature matching against known names."""
         region = SignatureRegion(x=100, y=500, width=200, height=100, confidence=0.8)
         signers = ["Juan Pérez", "María García"]
         result = match_signer(region, signers, page_text="Juan Pérez firma aquí")
@@ -50,17 +44,14 @@ class TestMatchSigner:
         assert result is None or isinstance(result, str)
 
     def test_no_match_returns_none(self):
-        """Unknown signer should return None."""
         region = SignatureRegion(x=100, y=500, width=200, height=100, confidence=0.8)
         result = match_signer(region, ["Unknown Person"], page_text="Some random text")
         assert result is None
 
 
 class TestGenerateSignatureReport:
-    """Tests for generate_signature_report()."""
 
     def test_returns_report(self):
-        """Should return a SignatureReport."""
         pages = [
             PageSignatures(
                 page_number=1,

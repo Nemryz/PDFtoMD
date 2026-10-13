@@ -1,4 +1,3 @@
-"""Integration tests for core pipeline — single-pass OCR (US-1, Feature 003)."""
 
 import json
 import tempfile
@@ -13,11 +12,9 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestSinglePassPipeline:
-    """Pipeline must use single-pass OCR — one Tesseract call per page."""
 
     @pytest.mark.slow
     def test_convert_produces_output_and_metadata(self):
-        """Conversion on real pages produces Markdown + metadata with confidence."""
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "output.md"
             result = convert_pdf(str(REAL_PDF), str(output), pages=[0, 1, 2])
@@ -40,8 +37,6 @@ class TestSinglePassPipeline:
 
     @pytest.mark.slow
     def test_single_tesseract_call_per_page(self, monkeypatch):
-        """Each OCR'd page triggers exactly one image_to_data call and
-        image_to_string is never called (no double-OCR in the pipeline)."""
         import pytesseract
 
         calls = []

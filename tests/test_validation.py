@@ -1,4 +1,3 @@
-"""Tests for validation module (US-5, Feature 003)."""
 
 import tempfile
 from pathlib import Path
@@ -176,7 +175,6 @@ class TestValidateSignaturePlaceholders:
 
 
 class TestValidateOutput:
-    """Tests for the existing validate_output() function."""
 
     def test_valid_output_passes(self):
         with tempfile.TemporaryDirectory() as tmpdir:

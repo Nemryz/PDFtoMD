@@ -1,4 +1,4 @@
-"""Anti-corruption layer — safe file I/O patterns from SDD-Kit."""
+# Safe file writes, borrowed from the SDD-Kit patterns: never leave a half-written file behind.
 
 from __future__ import annotations
 
@@ -11,10 +11,7 @@ from typing import Any
 
 
 def atomic_write(path: str | Path, content: str | bytes) -> None:
-    """Write to a temp file then atomically rename to target.
-
-    Prevents corruption if the process is interrupted mid-write.
-    """
+    # I write to a temp file then rename, since a rename is atomic on Windows and NTFS.
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
 
@@ -31,11 +28,7 @@ def atomic_write(path: str | Path, content: str | bytes) -> None:
 
 
 def write_with_backup(path: str | Path, content: str | bytes) -> None:
-    """Write content with automatic backup of the previous version.
-
-    If the target file exists, saves it as <file>.<timestamp>.bak
-    in .opencode/backups/ before overwriting.
-    """
+    # I keep the previous version around before overwriting, in case the caller wants it back.
     target = Path(path)
     if target.exists():
         backup_dir = target.parent.parent / ".opencode" / "backups"
@@ -46,7 +39,7 @@ def write_with_backup(path: str | Path, content: str | bytes) -> None:
         backup_path = backup_dir / f"{target.name}.{ts}.bak"
         backup_path.write_bytes(target.read_bytes())
 
-        # Keep max 10 backups
+        # Ten is plenty; older backups are noise.
         backups = sorted(backup_dir.glob(f"{target.name}.*.bak"))
         for old in backups[:-10]:
             old.unlink()
@@ -55,7 +48,7 @@ def write_with_backup(path: str | Path, content: str | bytes) -> None:
 
 
 def file_hash(path: str | Path) -> str:
-    """Compute SHA-256 hash of a file."""
+    # I hash the bytes so callers can tell whether a file actually changed.
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(8192), b""):
@@ -64,7 +57,7 @@ def file_hash(path: str | Path) -> str:
 
 
 def safe_read_json(path: str | Path, default: Any = None) -> Any:
-    """Read a JSON file safely, returning default on any error."""
+    # I never raise from here: a broken JSON file should degrade, not stop a conversion.
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
@@ -73,6 +66,6 @@ def safe_read_json(path: str | Path, default: Any = None) -> Any:
 
 
 def safe_write_json(path: str | Path, data: Any, indent: int = 2) -> None:
-    """Write data to a JSON file atomically."""
+    # Same temp-then-rename dance as write_text_atomic, but for JSON.
     content = json.dumps(data, indent=indent, ensure_ascii=False)
     atomic_write(path, content + "\n")

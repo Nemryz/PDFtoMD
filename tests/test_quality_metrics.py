@@ -1,10 +1,8 @@
-"""Tests for quality_metrics module (US-3, Feature 003)."""
 
 from pdfmd.quality_metrics import measure_text_quality, quality_score
 
 
 class TestMeasureTextQuality:
-    """Tests for measure_text_quality() function."""
 
     def test_empty_text(self):
         report = measure_text_quality("")
@@ -115,7 +113,6 @@ class TestMeasureTextQuality:
 
 
 class TestQualityScore:
-    """Tests for quality_score() function."""
 
     def test_empty_report(self):
         report = measure_text_quality("")
@@ -149,7 +146,6 @@ class TestQualityScore:
 
 
 class TestQualityReport:
-    """Tests for QualityReport dataclass."""
 
     def test_dataclass_fields(self):
         report = measure_text_quality("Test.\n")

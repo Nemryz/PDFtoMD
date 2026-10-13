@@ -1,4 +1,4 @@
-"""Quality metrics — measure text quality of converted Markdown."""
+# I score the finished Markdown so a bad conversion is obvious without reading it.
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class QualityReport:
-    """Report of text quality metrics."""
+    # The numbers themselves, plus a weighted score at the end.
 
     words: int
     broken_sentences: int
@@ -21,7 +21,7 @@ class QualityReport:
     avg_line_length: float
 
     def to_dict(self) -> dict:
-        """Convert to dictionary for JSON serialization."""
+        # I flatten to plain types so json.dump doesn't choke on the dataclass.
         return asdict(self)
 
 
@@ -47,14 +47,7 @@ _CONNECTORS = frozenset(
 
 
 def measure_text_quality(text: str) -> QualityReport:
-    """Measure quality metrics for extracted text.
-
-    Args:
-        text: Extracted Markdown text.
-
-    Returns:
-        QualityReport with all metric values.
-    """
+    # I measure each metric independently, then combine them.
     if not text:
         return QualityReport(
             words=0,
@@ -98,20 +91,13 @@ def measure_text_quality(text: str) -> QualityReport:
 
 
 def quality_score(report: QualityReport) -> float:
-    """Compute a weighted quality score (0-100).
-
-    Args:
-        report: QualityReport to score.
-
-    Returns:
-        Score from 0 (worst) to 100 (perfect).
-    """
+    # The weighted score, on a 0 to 100 scale.
     if report.words == 0:
         return 100.0
 
     total_words = max(report.words, 1)
 
-    # Penalty weights (per occurrence, normalized by word count)
+    # Each penalty is per occurrence, normalised by length so long documents aren't punished.
     penalties = (
         report.broken_sentences * 2.0
         + report.broken_connectors * 3.0
@@ -119,16 +105,16 @@ def quality_score(report: QualityReport) -> float:
         + report.noise_patterns * 1.0
     )
 
-    # Normalize penalties relative to text size
+    # Without this a 400-page document scores worse purely for existing.
     normalized = (penalties / total_words) * 100
 
-    # Clamp to 0-100
+    # Clamp, because accumulated penalties can overshoot zero.
     score = max(0.0, min(100.0, 100.0 - normalized))
     return round(score, 1)
 
 
 def _count_broken_sentences(lines: list[str]) -> int:
-    """Count lines ending in lowercase vowel without punctuation, followed by content."""
+    # A line ending on a lowercase vowel with no punctuation is almost always a cut-off word.
     count = 0
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -142,7 +128,7 @@ def _count_broken_sentences(lines: list[str]) -> int:
 
 
 def _count_broken_connectors(lines: list[str]) -> int:
-    """Count connector words split across lines."""
+    # A connector split across lines is a hyphenation break I failed to rejoin.
     count = 0
     for i, line in enumerate(lines):
         stripped = line.strip().lower()
@@ -152,7 +138,7 @@ def _count_broken_connectors(lines: list[str]) -> int:
 
 
 def _count_duplicate_lines(lines: list[str]) -> int:
-    """Count consecutive identical non-empty lines."""
+    # The same line twice running usually means the OCR looped.
     count = 0
     for i in range(1, len(lines)):
         if lines[i].strip() and lines[i].strip() == lines[i - 1].strip():
@@ -161,14 +147,14 @@ def _count_duplicate_lines(lines: list[str]) -> int:
 
 
 def _count_noise_patterns(lines: list[str]) -> int:
-    """Count OCR noise artifacts (single-char lines, garbage patterns)."""
+    # Short garbage lines are noise Tesseract produced from noise.
     count = 0
     for line in lines:
         stripped = line.strip()
-        # Single uppercase letter on its own line
+        # A lone capital is what speckle turns into.
         if re.match(r"^[A-Z]\s*$", stripped):
             count += 1
-        # Lines with mostly non-word characters (garbage)
+        # Mostly punctuation with no words is a misread rule or border.
         elif stripped and re.search(r"[^\w\s.,;:!?¿¡\"'()\[\]{}\-–—/\\|@#$%&*+=<>]", stripped):
             count += 1
     return count

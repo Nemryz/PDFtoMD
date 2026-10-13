@@ -1,11 +1,9 @@
-"""Tests for metadata_builder module."""
 
 from pdfmd.metadata_builder import build_metadata
 from pdfmd.quality_metrics import measure_text_quality
 
 
 class TestBuildMetadata:
-    """Tests for build_metadata()."""
 
     def test_returns_dict(self):
         result = build_metadata(

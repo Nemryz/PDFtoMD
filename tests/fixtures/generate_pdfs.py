@@ -1,8 +1,3 @@
-"""Generate test PDF fixtures for pipeline testing (US-4, Feature 003).
-
-Uses PyMuPDF (already installed) to create synthetic PDFs.
-Run standalone: python tests/fixtures/generate_pdfs.py
-"""
 
 from __future__ import annotations
 
@@ -14,20 +9,17 @@ FIXTURE_DIR = Path(__file__).parent / "pdfs"
 
 
 def _ensure_dirs():
-    """Create directory structure."""
     for subdir in ["valid", "edge_cases", "legal", "benchmarks"]:
         (FIXTURE_DIR / subdir).mkdir(parents=True, exist_ok=True)
 
 
 def _add_text_page(doc: pymupdf.Document, text: str, font_size: float = 12):
-    """Add a page with text to the document."""
     page = doc.new_page(width=595, height=842)  # A4
     page.insert_text((72, 72), text, fontsize=font_size)
     return page
 
 
 def _add_multiline_page(doc: pymupdf.Document, lines: list[str], font_size: float = 12):
-    """Add a page with multiple lines of text."""
     page = doc.new_page(width=595, height=842)
     y = 72
     for line in lines:
@@ -196,7 +188,6 @@ def create_encrypted():
 
 
 def create_corrupted():
-    """Create a corrupted PDF by truncating a valid one."""
     valid_path = FIXTURE_DIR / "valid" / "simple_1page.pdf"
     corrupted_path = FIXTURE_DIR / "edge_cases" / "corrupted.pdf"
     if valid_path.exists():
@@ -414,7 +405,6 @@ ALL_CREATORS = [
 
 
 def main():
-    """Generate all test PDF fixtures."""
     print("Generating test PDF fixtures...")
     _ensure_dirs()
 

@@ -1,4 +1,3 @@
-"""Coverage tests for page_classifier module."""
 
 import pymupdf
 import pytest
@@ -11,7 +10,6 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestPageClassifierCoverage:
-    """Tests to increase page_classifier.py coverage."""
 
     def test_classifier_init(self):
         clf = PageClassifier()

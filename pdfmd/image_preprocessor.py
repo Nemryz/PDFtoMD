@@ -1,8 +1,4 @@
-"""Image preprocessor for enhancing scanned pages before OCR.
-
-This module applies contrast enhancement, sharpness enhancement, noise reduction,
-and binarization to improve OCR accuracy on low-quality scans.
-"""
+# Clean-up for scanned pages before OCR sees them.
 
 from __future__ import annotations
 
@@ -19,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImagePreprocessor:
-    """Preprocesses images to improve OCR accuracy."""
+    # I run the requested steps in order and report what I actually applied.
 
     def preprocess(
         self,
@@ -28,23 +24,11 @@ class ImagePreprocessor:
         enhance_contrast: float = 1.5,
         enhance_sharpness: float = 1.5,
     ) -> PreprocessedImage:
-        """Apply preprocessing steps to an image.
-
-        Args:
-            img: Input PIL Image.
-            steps: List of preprocessing steps to apply.
-                   Options: 'contrast', 'sharpness', 'denoise', 'binarize'
-                   If None, uses adaptive preprocessing based on image analysis.
-            enhance_contrast: Contrast enhancement factor (1.0 = no change).
-            enhance_sharpness: Sharpness enhancement factor (1.0 = no change).
-
-        Returns:
-            PreprocessedImage with the enhanced image and metadata.
-        """
+        # Given no steps I decide for myself, based on what the image looks like.
         start_time = time.time()
         applied_steps: list[str] = []
 
-        # Adaptive preprocessing if no steps specified
+        # No steps means pick from the analysis below.
         if steps is None:
             steps = self._analyze_and_select_steps(img)
 
@@ -75,39 +59,35 @@ class ImagePreprocessor:
         )
 
     def _analyze_and_select_steps(self, img: Image.Image) -> list[str]:
-        """Analyze image and select appropriate preprocessing steps.
-
-        Returns:
-            List of recommended preprocessing steps.
-        """
+        # I look at contrast and noise, then choose the steps that help this image.
         from PIL import ImageStat
 
         steps = []
 
-        # Analyze contrast
+        # Low contrast is the most common problem in scans.
         stat = ImageStat.Stat(img)
         if len(stat.stddev) >= 3:
-            # Color image
+            # I work in HSV because luminance alone hides washed-out colour.
             avg_std = sum(stat.stddev[:3]) / 3
         else:
-            # Grayscale
+            # Grey has no saturation, so the check only means something for colour.
             avg_std = stat.stddev[0]
 
-        # Low contrast -> enhance
+        # Flat histogram means the page needs stretching.
         if avg_std < 30:
             steps.append("contrast")
             logger.debug(
                 f"Low contrast detected (stddev={avg_std:.1f}), adding contrast enhancement"
             )
 
-        # Analyze noise using Laplacian variance
+        # The Laplacian picks up high-frequency speckle, which is what noise looks like.
         try:
             import cv2
             import numpy as np
 
-            # Convert to numpy array
+            # OpenCV wants a numpy array rather than a PIL image.
             img_array = np.array(img.convert("L"))
-            # Laplacian variance (low = noisy)
+            # Low variance means noisy, high means already clean.
             laplacian = cv2.Laplacian(img_array, cv2.CV_64F)
             noise_metric = laplacian.var()
 
@@ -115,14 +95,14 @@ class ImagePreprocessor:
                 steps.append("denoise")
                 logger.debug(f"Noise detected (laplacian_var={noise_metric:.1f}), adding denoise")
 
-                # Also add sharpening after denoising
+                # Denoise alone leaves edges soft, so I follow it with sharpening.
                 steps.append("sharpness")
 
         except ImportError:
-            # OpenCV not available, skip noise analysis
+            # Without OpenCV I skip the noise step rather than guess.
             pass
 
-        # Always add sharpness for scanned documents
+        # Scans are always a bit soft, so sharpness helps even when nothing else fires.
         if "sharpness" not in steps:
             steps.append("sharpness")
 
@@ -133,15 +113,7 @@ class ImagePreprocessor:
         img: Image.Image,
         factor: float = 1.5,
     ) -> Image.Image:
-        """Enhance image contrast.
-
-        Args:
-            img: Input image.
-            factor: Enhancement factor (1.0 = no change, >1 = more contrast).
-
-        Returns:
-            Enhanced image.
-        """
+        # I stretch the histogram to push values toward the full range.
         from PIL import ImageEnhance
 
         enhancer = ImageEnhance.Contrast(img)
@@ -152,79 +124,50 @@ class ImagePreprocessor:
         img: Image.Image,
         factor: float = 1.5,
     ) -> Image.Image:
-        """Enhance image sharpness.
-
-        Args:
-            img: Input image.
-            factor: Enhancement factor (1.0 = no change, >1 = sharper).
-
-        Returns:
-            Enhanced image.
-        """
+        # An unsharp mask, which recovers edges better than plain blur.
         from PIL import ImageEnhance
 
         enhancer = ImageEnhance.Sharpness(img)
         return enhancer.enhance(factor)
 
     def _denoise(self, img: Image.Image) -> Image.Image:
-        """Reduce image noise using median filter.
-
-        Args:
-            img: Input image.
-
-        Returns:
-            Denoised image.
-        """
+        # A median filter removes speckle while keeping thin strokes intact.
         from PIL import ImageFilter
 
         return img.filter(ImageFilter.MedianFilter(size=3))
 
     def _binarize(self, img: Image.Image) -> Image.Image:
-        """Binarize image using Otsu's thresholding.
-
-        Args:
-            img: Input image.
-
-        Returns:
-            Binarized image (black and white).
-        """
+        # Otsu picks the threshold from the histogram instead of a fixed number.
         import numpy as np
 
-        # Convert to grayscale if needed
+        # Binarising a colour image makes no sense, so I convert first.
         if img.mode != "L":
             img = img.convert("L")
 
-        # Convert to numpy array
+        # Same numpy hop as above.
         img_array = np.array(img)
 
-        # Simple Otsu's thresholding
+        # A plain Otsu implementation on the 256-bin histogram.
         threshold = self._otsu_threshold(img_array)
 
         # Apply threshold
         binary = ((img_array > threshold) * 255).astype(np.uint8)
 
-        # Convert back to PIL
+        # OpenCV works in numpy, so I go back to PIL at the end.
         from PIL import Image as PILImage
 
         return PILImage.fromarray(binary)
 
     @staticmethod
     def _otsu_threshold(histogram: np.ndarray) -> int:
-        """Calculate Otsu's threshold from histogram.
-
-        Args:
-            histogram: 2D array (grayscale image).
-
-        Returns:
-            Optimal threshold value.
-        """
+        # The value Otsu picks, exposed separately so tests can check it.
         import numpy as np
 
-        # Calculate histogram
+        # 256 bins covers the whole byte range.
         hist, _ = np.histogram(histogram, bins=256, range=(0, 256))
         total = histogram.size
 
-        # Otsu's method
+        # Between-class variance is what Otsu maximises.
         sum_total = np.sum(np.arange(256) * hist)
         sum_bg = 0
         weight_bg = 0
@@ -254,17 +197,7 @@ class ImagePreprocessor:
 
 
 def _laplacian_variance(gray: Image.Image) -> float:
-    """Compute Laplacian variance of a grayscale image (sharpness metric).
-
-    Uses the standard 4-neighbourhood Laplacian kernel via numpy —
-    no OpenCV dependency. High variance = sharp, low = blurry/uniform.
-
-    Args:
-        gray: Grayscale PIL Image.
-
-    Returns:
-        Laplacian variance (float).
-    """
+    # I use Laplacian variance as the sharpness number, because blur flattens it.
     import numpy as np
 
     arr = np.asarray(gray, dtype=np.float64)
@@ -273,20 +206,7 @@ def _laplacian_variance(gray: Image.Image) -> float:
 
 
 def should_preprocess(image: Image.Image) -> bool:
-    """Return True if the image would benefit from preprocessing (US-2).
-
-    Gate logic — skip only when clearly good or clearly hopeless:
-    - Blank/near-uniform images (stddev < 5): False — nothing to enhance.
-    - Good-quality images (stddev >= 40 AND Laplacian variance >= 150):
-      False — preprocessing adds cost without quality gain.
-    - Everything else (low contrast, noise, blur): True.
-
-    Args:
-        image: PIL Image to evaluate (any mode).
-
-    Returns:
-        True if preprocessing should run, False to skip it.
-    """
+    # I decide whether enhancing is worth the time, based on contrast and sharpness together.
     from PIL import ImageStat
 
     gray = image.convert("L") if image.mode != "L" else image
@@ -294,16 +214,16 @@ def should_preprocess(image: Image.Image) -> bool:
     stat = ImageStat.Stat(gray)
     stddev = stat.stddev[0]
 
-    # Blank / near-uniform page: no content to enhance
+    # A blank page has nothing to enhance and would only cost time.
     if stddev < 5:
         return False
 
-    # Good contrast AND sharp enough: skip preprocessing
+    # Good contrast and sharp enough means the image is already fine.
     if stddev >= 40:
         if _laplacian_variance(gray) >= 150:
             return False
 
-    # Low contrast, noise, or blur: preprocess
+    # Anything else is worth another pass.
     return True
 
 
@@ -311,14 +231,6 @@ def preprocess_image(
     img: Image.Image,
     steps: list[str] | None = None,
 ) -> PreprocessedImage:
-    """Convenience function for image preprocessing.
-
-    Args:
-        img: Input PIL Image.
-        steps: Preprocessing steps (None for adaptive).
-
-    Returns:
-        PreprocessedImage with enhanced image.
-    """
+    # A shortcut for the common case of preprocess-then-analyse.
     preprocessor = ImagePreprocessor()
     return preprocessor.preprocess(img, steps=steps)

@@ -1,4 +1,3 @@
-"""Coverage tests for core.py module."""
 
 import tempfile
 from pathlib import Path
@@ -12,7 +11,6 @@ REAL_PDF = FIXTURE_DIR / "expediente Miranda ..pdf"
 
 
 class TestCoreCoverage:
-    """Tests to increase core.py coverage."""
 
     def test_convert_returns_conversion_result(self):
         if not REAL_PDF.exists():

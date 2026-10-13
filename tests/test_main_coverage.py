@@ -1,4 +1,3 @@
-"""Coverage tests for __main__ module."""
 
 import subprocess
 import sys
@@ -6,7 +5,6 @@ import sys
 
 class TestMain:
     def test_run_as_module(self):
-        """python -m pdfmd should invoke the CLI."""
         result = subprocess.run(
             [sys.executable, "-m", "pdfmd", "--help"],
             capture_output=True,
