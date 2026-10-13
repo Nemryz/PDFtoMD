@@ -1,0 +1,59 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# --- Testing / coverage ---
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+nosetests.xml
+
+# --- REAL LEGAL DOCUMENTS — NEVER COMMIT (data protection) ---
+# Expediente real + duplicado en la raíz.
+# El slash inicial limita el patrón SOLO a la raíz, de modo que los
+# fixtures sintéticos de tests/fixtures/pdfs/ se siguen versionando.
+/*.pdf
+# El mismo expediente dentro de los fixtures de test
+tests/fixtures/*expediente*.pdf
+# Markdown extraído del expediente + renders PNG de sus páginas
+output/
+output_mejorado/
+output_test_classify/
+images/
+
+# --- Resultados de benchmark (regenerables; contienen el nombre del archivo) ---
+bench_results_*.json
+
+# --- Editores / SO ---
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Secretos ---
+.env
+.env.*
+!.env.example
+
+# --- Agente / estado local de desarrollo ---
+# Configuración de opencode y estado SDD: es estado local de la máquina,
+# no documentación del proyecto.
+.opencode/
+
+# Especificaciones SDD (spec.md, plan.md, tasks.md, spec.json).
+# Artefactos de proceso local, no documentación para el repositorio.
+specs/
